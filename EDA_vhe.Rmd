@@ -1,0 +1,19 @@
+---
+title: "Lab 1 VHE"
+author: "Victoria Eastman"
+date: "September 19, 2018"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Initial EDA
+
+Problem statement: 
+
+```{r}
+setwd("/home/victoriaeastman/berkeley/w271/w271_lab1")
+data <- read.csv("challenger.csv")
+```
