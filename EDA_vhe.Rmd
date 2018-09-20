@@ -14,6 +14,51 @@ knitr::opts_chunk$set(echo = TRUE)
 Problem statement: 
 
 ```{r}
+# Import libraries
+suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages(library(Hmisc))
+
 setwd("/home/victoriaeastman/berkeley/w271/w271_lab1")
 data <- read.csv("challenger.csv")
+```
+
+```{r}
+glimpse(data)
+describe(data)
+
+# I'm curious about the value counts for o-ring failures
+table(data$O.ring)
+```
+
+Initial findings:
+
+  - 23 data points with no missing values for any variables
+  - Dependent variable, O.ring, is categorical and takes three values: 0, 1, and 2 representing the number of o-ring failures on space launches. The mean value is 0.3913 which means the data is skewed towards 0 o-ring failures. Futher investigation shows there were 2 flights with 2 o-ring failures, 5 with 1 failure, and 16 with no failures.
+  - The explanatory variables are as follows:
+  
+    + Temp: temperature at launch (degrees F)
+    + Pressure: Combustion pression (psi)
+  
+  
+```{r}
+par(mfrow = c(3,2))
+
+# histogram of explanatory variables
+for (i in 2:4){
+  hist(as.numeric(data[,i]), main=paste0("Histogram of ", colnames(data)[i]), xlab=NA)
+  hist(as.numeric(log(data[,i])), main=paste0("Histogram of log(", colnames(data)[i], ")"), xlab=NA)
+}
+
+```
+
+
+
+```{r}
+for (i in 2:3){
+  print(ggplot(data, aes(factor(O.ring), data[,i])) +
+          geom_boxplot(aes(fill = factor(O.ring))) + 
+          geom_jitter() +
+          ggtitle(paste0(colnames(data)[i], " by Admit")) + 
+          theme(plot.title = element_text(lineheight=1, face="bold")))
+}
 ```
