@@ -1,4 +1,4 @@
 ## W271 
 
-### Gurdit Chahal and Victoria Eastman
+### Gurdit Chahal, Zach Day, and Victoria Eastman
 
