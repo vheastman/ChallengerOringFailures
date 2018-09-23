@@ -91,6 +91,17 @@ ggplot(data, aes(x = Temp)) +
 
 ```
 
+```{r}
+ggplot(data, aes(x = factor(O.ring), y = Temp, fill = factor(O.ring))) + geom_boxplot() +
+facet_wrap(~ Pressure, ncol = 3)
+```
+
+```{r}
+plot(O.ring~Temp,data=data)
+```
+
+
+
 ####Introduction to problem and model###
 
 ###EDA###
@@ -107,13 +118,13 @@ Below are the variables:
 •Temp:Temperature(F) at launch
 •Pressure: Combustion pressure (psi)
 •O.ring:Number of primary field O-ringfailures
-•Number:TotalnumberofprimaryfieldO-rings(six total,three eachfor the two booster rockets)
+•Number:Total number of primary field O-rings(six total,three each for the two booster rockets)
 The response variable is O.ring,and the explanatory variables are Temp and Pressure. 
 Complete the following:
 
 (a)The authors use logistic regression to estimate the probability an O-ring will fail.In order to use this model, the authors needed to assume that each O-ring is independent for each launch. Discuss why this assumption is necessary and the potential problems with it. Note that a subsequent analysis helped to alleviate the authors’ concerns about independence.
 
-*This independence assumption is necessary for deriving the likelihood-based solution as we can take products of the probabilities. Potential issues is that the quality/durability of the O-ring might be dependent on the factory or even batch that it came from (clustering) and could interfere with producing a more accurate estimate when left unaccounted for. *
+*This independence assumption is necessary for deriving the likelihood-based solution as we can take products of the probabilities. Potential issues is that the quality/durability of the O-ring might be dependent on the factory or even batch that it came from (clustering) and could interfere with producing a more accurate estimate when left unaccounted for. Moreover damage in one O-ring could affect the probability of damage in subsequent O-rings (might be easier for the system to collapse as a whole). *
 
 (b)Estimate the logistic regression model using the explanatory variables in a linear form.
 
@@ -204,7 +215,7 @@ CI.pi
 ```
 
 
-(e)Rather than using Wald or profile LR intervals for the probability of failure, Dalalet al. (1989) use a parametric bootstrap to compute intervals. Their process was to (1) simulate a large number of data sets (n= 23for each) from the estimated model of $$logit(\pi)=Beta_{0}+Beta_{1}*Temp$$;(2)estimate new models for each dataset,say $$logit(\pi)=Beta_{0}+Beta_{1}*Temp$$;and (3)compute at a specific temperature of interest. The authors used the 0.05 and 0.95 observed quantiles from the simulated distribution as their 90% confidence interval limits. Using the parametric bootstrap, compute 90% confidence intervals separately at temperatures of 31 and 72.27
+(e)Rather than using Wald or profile LR intervals for the probability of failure, Dalalet al. (1989) use a parametric bootstrap to compute intervals. Their process was to (1) simulate a large number of data sets (n= 23 for each) from the estimated model of $$logit(\pi)=\beta_{0}+\beta_{1}*Temp$$;(2)estimate new models for each dataset,say $$logit(\pi)=Beta_{0}+Beta_{1}*Temp$$;and (3)compute at a specific temperature of interest. The authors used the 0.05 and 0.95 observed quantiles from the simulated distribution as their 90% confidence interval limits. Using the parametric bootstrap, compute 90% confidence intervals separately at temperatures of 31 and 72.27
 
 ```{r}
 #Todo: Bootstrapping CI
