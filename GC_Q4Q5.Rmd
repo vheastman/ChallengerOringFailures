@@ -1,121 +1,89 @@
 ---
-title: "Lab 1 VHE"
-author: "Victoria Eastman"
-date: "September 19, 2018"
-output: pdf_document
+title: "Statistical Methods for Discrete Response, Time Series, and Panel Data (W271): Lab 1"
+author: "Professor Jeffrey Yau"
+output: 
+  pdf_document:
+  toc: true
+  number_sections: true
+fontsize: 11pt
+geometry: margin=1in
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
+# Instructions:
 
-# Notes from Async videos
- - always good to write out the model after it's been estimated (ie logit(pi) = 0.5 + 5good + 3frank etc.)
+*  $\textbf{Due Date: Monday Week 4}$
+*  This lab can be done as an individual project or a group project in a group of up to 3 students from your session
+*  $\textbf{Page limit of the pdf report: 20, which does not include the table of content page, if you have one.}$
+  * Use the margin, linespace, and font size specified below:
+    * fontsize=11pt
+    * margin=1in
+    * line_spacing=single
 
+* Submission:
+    * Each group only needs to make one submission to our course's GitHub repo; please have one of your team members made the submission
+    * Submit 2 files:
+        1. A pdf file including the summary, the details of your analysis, and all the R codes used to produce the analysis. Please do not suppress the codes in your pdf file.
+        2. R markdown file used to produce the pdf file
+    * Use the following file-naming convensation; fail to do so will receive 10% reduction in the grade:
+        * FirstNameLastName1_FirstNameLastName2_FirstNameLastName3_LabNumber.fileExtension
+        * For example, if you have three students in the group for Lab 1, and their names are Gerard Kelley, Steve Yang, and Jeffrey Yau, then you should name your file the following
+            * GerardKelley_SteveYang_JeffreyYau_Lab1.Rmd
+            * GerardKelley_SteveYang_JeffreyYau_Lab1.pdf
+    * Although it sounds obvious, please write the name of each members of your group on page 1 of your pdf and Rmd files.
+    * This lab can be completed in a group of up to 3 students in your session. Students are encouraged to work in a group for the lab.
 
-### Initial EDA
+* Other general guidelines:
 
-Problem statement: 
+    * For statistical methods that we cover in this course, use only the R libraries and functions that are covered in this course. If you use libraries and functions for statistical modeling that we have not covered, you have to provide (1) explanation of why such libraries and functions are used instead and (2) reference to the library documentation. Lacking the explanation and reference to the documentation will result in a score of zero for the corresponding question.
 
-```{r}
-# Import libraries
-suppressPackageStartupMessages(library(dplyr))
-suppressPackageStartupMessages(library(Hmisc))
+    * Your report needs to include
 
-setwd("/Users/gurditchahal/w271_lab1")
-data <- read.csv("challenger.csv")
-```
-
-```{r}
-glimpse(data)
-describe(data)
-
-# I'm curious about the value counts for o-ring failures
-table(data$O.ring)
-```
-
-Initial findings:
-
-  - 23 data points with no missing values for any variables
-  - Dependent variable, O.ring, is categorical and takes three values: 0, 1, and 2 representing the number of o-ring failures on space launches. The mean value is 0.3913 which means the data is skewed towards 0 o-ring failures. Futher investigation shows there were 2 flights with 2 o-ring failures, 5 with 1 failure, and 16 with no failures.
-  - The explanatory variables are as follows:
-  
-    + Temp: temperature at launch (degrees F)
-    + Pressure: Combustion pression (psi)
+        * A thorough analysis of the given dataset, which includ examiniation of anomalies, missing values, potential of top and/or bottom code, and other potential anomalies, in each of the variables.
+        
+        * An introduction section that summarize the key question being asked, the methodology employed (including the final model specification), and a highlight of the main result.
+        
+        * A comprehensive Exploratory Data Analysis (EDA) analysis, which includes both graphical and tabular analysis, as taught in this course. Output-dump (that is, graphs and tables that don't come with explanations) will result in a very low, if not zero, score. Since the report has a page-limit, you will have to be selective when choosing visuals to illustarte your key points, assocaited with a concise explanation of the visuals. Please do not ramble. Please remember that your report will have to "walk me through" your analysis.
     
+      * A modeling section that include a detailed narrative. Make sure that your audience (in this case, the professors and your classmates) can easily follow the logic of your analysis that leads to your final model.
 
-Considerations:
+          * The rationale of decisions made in your modeling, supported by sufficient empirical evidence. Use the insights generated from your EDA step to guide your modeling step, as we discussed in live sessions.
+    
+          * All the steps used to arrive at your final model; these steps must be clearly shown and explained.
 
-    - Although pressure (in psi) is generally expected to be a continuous variable, we see three consistent values of   50,100,200 and may be considered as a categorical variable instead.
-    - The goal of this study is to estimate a logistic regression so we are going to recategorize the O.ring variable as 0 for no failures and 1 for *at least 1* failure. 
-  
-  
+      * A conclusion that summarize the final result with respect to the question(s) being asked and key takeaways from the analysis.
+
+
+* Other requirements:
+
+  *  Students are expected to act with regards to UC Berkeley Academic Integrity.
+
+
+\newpage
+# Investigation of the 1989 Space Shuttel Challenger Accident 
+
+1. Carefullly read the Dala et al (1989) paper (Skip Section 5).
+
+2. Answer question 4 and 5 on Chapter 2 (page 129 and 130) of Bilder and Loughin's *"Analysis of Categorical Data with R"*
+
+3. In addition to the questions in Question 4 and 5, answer the following questions:
+
+    a. Interpret the main result of your final model in terms of both odds and probability of failure 
+
+    b. With the same set of explanatory variables in your final model, estimate a linear regression model. Explain the model results; conduct model diagnostic; and assess the validity of the model assumptions.  Would you use the linear regression model or binary logistic regression in this case.  Please explain.
+
+####Dataset Analysis###
 ```{r}
+library(car)
+library(dplyr)
+library(Hmisc)
 
-# Change the O.ring variable
-data$O.ring[data$O.ring >= 1] = 1
-
-# histogram of explanatory variables
-for (i in 2:4){
-  par(mfrow = c(2,1))
-  hist(as.numeric(data[,i]), main=paste0("Histogram of ", colnames(data)[i]), xlab=NA)
-  hist(as.numeric(log(data[,i])), main=paste0("Histogram of log(", colnames(data)[i], ")"), xlab=NA)
-  #hist(as.numeric(data[,i]^2), main=paste0("Histogram of log(", colnames(data)[i], ")"), xlab=NA)
-}
-
+# Set working directory
+setwd("/Users/gurditchahal/f18-GurditC/labs/lab1/")
+wd <- getwd()
+wd
+df <- read.csv(file="challenger.csv", header=TRUE, sep=",")
 ```
 
-The distribution of the temperature variable is fairly close to a normal distribution and does not appear to become closer to a normal distribution after a log transformation. Neither the Pressure or O.ring variables are close to a normal distribution and are not improved by a log transformation. Thus it seems like the variables should be left in their un-tranformed state.
-
-```{r}
-for (i in 2:3){
-  print(ggplot(data, aes(factor(O.ring), data[,i])) +
-          geom_boxplot(aes(fill = factor(O.ring))) + 
-          geom_jitter() +
-          ggtitle(paste0(colnames(data)[i], " by O-ring Failure")) + 
-          theme(plot.title = element_text(lineheight=1, face="bold")))
-}
-```
-
-The first box-plot clearly shows 
-
-
-```{r}
-data$tempsqr = data$Temp^2
-# Visualize interaction variables
-ggplot(data, aes(factor(O.ring), data[,ncol(data)])) +
-          geom_boxplot(aes(fill = factor(O.ring))) + 
-          geom_jitter() +
-          ggtitle(paste0(colnames(data)[i], " by O-ring Failure")) + 
-          theme(plot.title = element_text(lineheight=1, face="bold"))
-
-```
-
-
-```{r}
-#how much does temperature vary by each pressure stage
-ggplot(data, aes(factor(Pressure), Temp)) +
-          geom_boxplot(aes(fill = factor(Pressure))) + 
-          geom_jitter() +
-          ggtitle( "Temperature by Pressure") + 
-          theme(plot.title = element_text(lineheight=1, face="bold"))
-```
-
-```{r}
-#How do failures vary by pressure level?
-ggplot(data,aes(x=factor(O.ring)))+geom_histogram(stat='count')+facet_grid(~Pressure)
-```
-
-```{r}
-#What does the distribution of temperatures look like?
-ggplot(data, aes(x = Temp)) +
-  geom_histogram(aes(y = ..density..), binwidth = 0.2, fill="#0072B2", colour="black") +
-  ggtitle("Temperature") + 
-  theme(plot.title = element_text(lineheight=1, face="bold"))
-
-
-
-```
 
 ####Introduction to problem and model###
 
@@ -245,4 +213,5 @@ anova(mod.fit2,mod.fit.Ha,test="Chisq")
 ```
 
 Quadratic term fails to produce significant effect in change in residual deviance and so we fail to reject that the coefficient is actually 0 for the quadratic term.
+
 

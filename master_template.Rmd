@@ -9,10 +9,6 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# Notes from Async videos
- - always good to write out the model after it's been estimated (ie logit(pi) = 0.5 + 5good + 3frank etc.)
-
-
 ### Initial EDA
 
 Problem statement: 
@@ -43,55 +39,33 @@ Initial findings:
     + Temp: temperature at launch (degrees F)
     + Pressure: Combustion pression (psi)
     
-
-Considerations:
-
-    - Although pressure (in psi) is generally expected to be a continuous variable, we see three consistent values of   50,100,200 and may be considered as a categorical variable instead.
-    - The goal of this study is to estimate a logistic regression so we are going to recategorize the O.ring variable as 0 for no failures and 1 for *at least 1* failure. 
+    -Although pressure (in psi) is generally expected to be a continuous variable, we see three consistent values of   50,100,200 and may be considered as a categorical variable instead.
+    
+    
   
   
 ```{r}
-
-# Change the O.ring variable
-data$O.ring[data$O.ring >= 1] = 1
+par(mfrow = c(3,2))
 
 # histogram of explanatory variables
 for (i in 2:4){
-  par(mfrow = c(2,1))
   hist(as.numeric(data[,i]), main=paste0("Histogram of ", colnames(data)[i]), xlab=NA)
   hist(as.numeric(log(data[,i])), main=paste0("Histogram of log(", colnames(data)[i], ")"), xlab=NA)
-  #hist(as.numeric(data[,i]^2), main=paste0("Histogram of log(", colnames(data)[i], ")"), xlab=NA)
 }
 
 ```
 
-The distribution of the temperature variable is fairly close to a normal distribution and does not appear to become closer to a normal distribution after a log transformation. Neither the Pressure or O.ring variables are close to a normal distribution and are not improved by a log transformation. Thus it seems like the variables should be left in their un-tranformed state.
+
 
 ```{r}
 for (i in 2:3){
   print(ggplot(data, aes(factor(O.ring), data[,i])) +
           geom_boxplot(aes(fill = factor(O.ring))) + 
           geom_jitter() +
-          ggtitle(paste0(colnames(data)[i], " by O-ring Failure")) + 
+          ggtitle(paste0(colnames(data)[i], " by Admit")) + 
           theme(plot.title = element_text(lineheight=1, face="bold")))
 }
 ```
-
-The first box-plot clearly shows 
-
-
-```{r}
-data$tempsqr = data$Temp^2
-# Visualize interaction variables
-ggplot(data, aes(factor(O.ring), data[,ncol(data)])) +
-          geom_boxplot(aes(fill = factor(O.ring))) + 
-          geom_jitter() +
-          ggtitle(paste0(colnames(data)[i], " by O-ring Failure")) + 
-          theme(plot.title = element_text(lineheight=1, face="bold"))
-
-```
-
-
 ```{r}
 #how much does temperature vary by each pressure stage
 ggplot(data, aes(factor(Pressure), Temp)) +
@@ -117,6 +91,17 @@ ggplot(data, aes(x = Temp)) +
 
 ```
 
+```{r}
+ggplot(data, aes(x = factor(O.ring), y = Temp, fill = factor(O.ring))) + geom_boxplot() +
+facet_wrap(~ Pressure, ncol = 3)
+```
+
+```{r}
+plot(O.ring~Temp,data=data)
+```
+
+
+
 ####Introduction to problem and model###
 
 ###EDA###
@@ -133,13 +118,13 @@ Below are the variables:
 •Temp:Temperature(F) at launch
 •Pressure: Combustion pressure (psi)
 •O.ring:Number of primary field O-ringfailures
-•Number:TotalnumberofprimaryfieldO-rings(six total,three eachfor the two booster rockets)
+•Number:Total number of primary field O-rings(six total,three each for the two booster rockets)
 The response variable is O.ring,and the explanatory variables are Temp and Pressure. 
 Complete the following:
 
 (a)The authors use logistic regression to estimate the probability an O-ring will fail.In order to use this model, the authors needed to assume that each O-ring is independent for each launch. Discuss why this assumption is necessary and the potential problems with it. Note that a subsequent analysis helped to alleviate the authors’ concerns about independence.
 
-*This independence assumption is necessary for deriving the likelihood-based solution as we can take products of the probabilities. Potential issues is that the quality/durability of the O-ring might be dependent on the factory or even batch that it came from (clustering) and could interfere with producing a more accurate estimate when left unaccounted for. *
+*This independence assumption is necessary for deriving the likelihood-based solution as we can take products of the probabilities. Potential issues is that the quality/durability of the O-ring might be dependent on the factory or even batch that it came from (clustering) and could interfere with producing a more accurate estimate when left unaccounted for. Moreover damage in one O-ring could affect the probability of damage in subsequent O-rings (might be easier for the system to collapse as a whole). *
 
 (b)Estimate the logistic regression model using the explanatory variables in a linear form.
 
@@ -230,7 +215,7 @@ CI.pi
 ```
 
 
-(e)Rather than using Wald or profile LR intervals for the probability of failure, Dalalet al. (1989) use a parametric bootstrap to compute intervals. Their process was to (1) simulate a large number of data sets (n= 23for each) from the estimated model of $$logit(\pi)=Beta_{0}+Beta_{1}*Temp$$;(2)estimate new models for each dataset,say $$logit(\pi)=Beta_{0}+Beta_{1}*Temp$$;and (3)compute at a specific temperature of interest. The authors used the 0.05 and 0.95 observed quantiles from the simulated distribution as their 90% confidence interval limits. Using the parametric bootstrap, compute 90% confidence intervals separately at temperatures of 31 and 72.27
+(e)Rather than using Wald or profile LR intervals for the probability of failure, Dalalet al. (1989) use a parametric bootstrap to compute intervals. Their process was to (1) simulate a large number of data sets (n= 23 for each) from the estimated model of $$logit(\pi)=\beta_{0}+\beta_{1}*Temp$$;(2)estimate new models for each dataset,say $$logit(\pi)=Beta_{0}+Beta_{1}*Temp$$;and (3)compute at a specific temperature of interest. The authors used the 0.05 and 0.95 observed quantiles from the simulated distribution as their 90% confidence interval limits. Using the parametric bootstrap, compute 90% confidence intervals separately at temperatures of 31 and 72.27
 
 ```{r}
 #Todo: Bootstrapping CI
@@ -245,4 +230,55 @@ anova(mod.fit2,mod.fit.Ha,test="Chisq")
 ```
 
 Quadratic term fails to produce significant effect in change in residual deviance and so we fail to reject that the coefficient is actually 0 for the quadratic term.
+
+
+
+
+
+
+3. In addition to the questions in Question 4 and 5, answer the following questions:
+a. Interpret the main result of your final model in terms of both odds and probability of failure
+b. With the same set of explanatory variables in your final model, estimate a linear regression model. Explain the model results; conduct model diagnostic; and assess the validity of the model assumptions. Would you use the linear regression model or binary logistic regression in this case. Please explain.
+
+```{r}
+mod.lm <- lm(as.numeric(O.ring) ~ Temp, data = data)
+summary(mod.lm)
+```
+
+```{r}
+par(mfrow=c(2,2))
+plot(mod.lm)
+```
+
+```{r}
+par(mfrow=c(1,1))
+residualPlots(mod.lm)
+```
+
+```{r}
+scatterplot(as.numeric(data$O.ring), mod.lm$fitted.values)
+```
+```{r}
+summary(mod.lm$fitted.values)
+```
+```{r}
+hist(mod.lm$residuals)
+qqnorm(mod.lm$residuals)
+qqline(mod.lm$residuals)
+scatterplot(mod.lm$fitted.values, mod.lm$residuals,
+            smoother = loessLine, cex = 0.5, pch = 19,
+            smoother.args = list(lty = 1, lwd = 5), 
+            main = "Residuals vs Fitted Values", 
+            xlab = "Fitted Values", ylab ="Residuals")
+```
+```{r}
+shapiro.test(mod.lm$residuals)
+ncvTest(mod.lm)
+require(lmtest)
+bptest(mod.lm)
+durbinWatsonTest(mod.lm)
+require(gvlma)
+gv.mod.lm <- gvlma(mod.lm)
+summary(gv.mod.lm) 
+```
 
