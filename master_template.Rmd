@@ -11,7 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## I. Introduction
 
-Following the Challenger Space Shuttle's destruction in 1986, a commission appointed by President Reagan determined the cause to be a gas leak through a field joint. This problem was well-known to NASA and is frequently referred to as an o-ring failure. In 1989, Dalal et al. collected data from previous space shuttle launches to study the probability of an o-ring failure under conditions similar to those that occured during the Challenger launch in 1986. In this analysis, we will use their dataset to mimic their study and attempt to determine the effect of key explanatory variables (temperature and pressure) on o-ring failure. 
+Following the Challenger Space Shuttle's destruction in 1986, a commission appointed by President Reagan determined the cause to be a gas leak through a field joint. This problem was well-known to NASA and is frequently referred to as an o-ring failure. In 1989, Dalal et al. collected data from previous space shuttle launches to study the probability of an o-ring failure under conditions similar to those that occured during the Challenger launch in 1986. In this analysis, we will use their dataset to mimic their study and attempt to determine the effect of key explanatory variables (temperature and pressure) on o-ring failure. In the end we specified a logistic regression model on temperature with the following formula:
 
 We first begin our analysis with a thorough exploratory data analysis in order to understand the variables we are working with. Then, we estimate a series of models that we use to predict o-ring failure. 
 
@@ -21,8 +21,8 @@ suppressPackageStartupMessages(library(dplyr))
 suppressPackageStartupMessages(library(Hmisc))
 suppressPackageStartupMessages(library(car))
 
-#setwd("/Users/gurditchahal/w271_lab1")
-setwd("/home/victoriaeastman/berkeley/w271/w271_lab1")
+setwd("/Users/gurditchahal/w271_lab1")
+#setwd("/home/victoriaeastman/berkeley/w271/w271_lab1")
 df <- read.csv("challenger.csv")
 ```
 
@@ -44,9 +44,10 @@ A glimpse of the data shows we have 5 variables in our dataset:
   - O.ring: number of primary field o-ring failures
   - Number: total number of primary field o-rings
   
-We are primarily interested in the effects of temperature and pressure on o-ring failure and we don't see any immediate use for the flight number or total number of primary field o-rings, we will disregard these variables in the analysis that follows. 
+We are primarily interested in the effects of temperature and pressure on o-ring failure. Seeing as the total number of primary field o-rings does not change for our observations and we have no particular reason to see it change, we discard this variable due to lack of immediate use/differentiating behavior between failed and successful launches. Similarly, we discard flight number due to lack of any immediate use.
 
 We can see that the `O.ring` variable has 3 distinct values: 0, 1, and 2. We are going to nuanced in our analysis and say we want to find the conditions that lead to *at least one* o-ring failure. Therefore, we will recategorize those flights with 2 failures as having 1 failure for the purposes of this study. 
+
 
 ```{r}
 # We don't want to eliminate raw data
@@ -54,7 +55,16 @@ df$O.ring.total = df$O.ring
 df$O.ring[df$O.ring > 1] = 1
 ```
 
-In addition, we see that the dataset contains 23 data points from other shuttle launches and none of the variables are missing any entries. Interestingly, pressure is generally considered to be a continuous variable, however, we see three distince values of 50, 100, and 200. We could potentially see reason to use this as a categorical variable in the regression estimation below. 
+
+In addition, we see that the dataset contains 23 data points from other shuttle launches and none of the variables are missing any entries. Interestingly, pressure is generally considered to be a continuous variable, however, we see three distinct values of 50, 100, and 200. We could potentially see reason to use this as a categorical variable in the regression estimation below. 
+
+
+```{r}
+#quick check for potential collinearity as well as surface level relations
+cor(df[,c("Temp", "Pressure", "O.ring")])
+```
+We take a quick look at correlation between variables to assess wether there might be collinearity as well as a rough gauge of predictive power between these variables prior to any transformations. We see a moderate negative correlation between O.ring failures and temperature and a weakly positive correlation between pressure and failures. We see negligible positive correlation between temperature and pressure and thus don't worry about colliniearity.
+
 
 ```{r}
 #What does the distribution of temperatures look like?
@@ -64,11 +74,12 @@ ggplot(df, aes(x = Temp)) +
   theme(plot.title = element_text(lineheight=1, face="bold"))
 ```
 
-The distribution of the temperature explanatory variable looks to faintly resemble a normal distribution with a very slight negative skew. The mode of temperatures is 70 and the range is `r range(df$Temp)`. 
+The distribution of the temperature explanatory variable looks to faintly resemble a normal distribution with a very slight negative skew. Due to this, we see no compelling reason to take a log transformation of the variable at this stage. The mode of temperatures is 70 and the range is `r range(df$Temp)`. 
 
 ### II (b) Bivariate Analysis
 
 ```{r}
+#group each explanatory variable by O.ring failure
 for (i in 2:3){
   print(ggplot(df, aes(factor(O.ring), df[,i])) +
           geom_boxplot(aes(fill = factor(O.ring))) + 
@@ -91,7 +102,7 @@ The above plot reinforces the finding from above that the data has a negative sk
 plot(O.ring~Temp,data=df, main="O-ring Failures vs Temperature")
 ```
 
-Directly looking at the distribution of o-ring failures to temperature, we can determine our data is not completely separated. 
+Directly looking at the distribution of o-ring failures to temperature, we can determine our data is not completely separated (hence traditional logistic regression is still a valid possibility for model selection). 
 
 ```{r}
 #how much does temperature vary by each pressure stage
@@ -108,6 +119,7 @@ Comparing temperature and pressure directly, we can see that there is a vaguely 
 
 
 ```{r}
+#slicing by pressure, any distinct relations between failure and temperature?
 ggplot(df, aes(x = factor(O.ring), y = Temp, fill = factor(O.ring))) + geom_boxplot() +
 facet_wrap(~ Pressure, ncol = 3)
 ```
