@@ -370,8 +370,8 @@ $$
 $$
 #The assumptions we want to test/be on the look out for:
 1)The model is linear in it's parameters.
-2)The conditional mean of the errors is 0.
-3)There is a random sampling of observations.
+2)The conditional mean of the errors is 0. 
+3)There is a random sampling of observations. *don't have choice here*
 4) There is no multi-collinearity/perfect collinearity amongst explanatory variables. *passed in EDA*
 5)The errors have common constant variance (homoscedasticity).
 6)The errors are independent of one another.
