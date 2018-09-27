@@ -375,7 +375,7 @@ $$
 4) There is no multi-collinearity/perfect collinearity amongst explanatory variables. *passed in EDA*
 5)The errors have common constant variance (homoscedasticity).
 6)The errors are independent of one another.
-7)The errors are normally distributed. *not required for BLUE but due need for reliable inference*
+7)The errors are normally distributed. *not required for BLUE but do need for reliable inference*
 
 We note since are observations are less than 30, we can't make asymptotic arguments for our parameter estimates. Moreover, for some of our tests, such as Shapiro, we will likely fail to reject due to lack of data and so we must test these assumptions from multiple angles (visualizations, etc.).
 
@@ -409,7 +409,7 @@ We already knew from the binary nature of the outcome that a continuous seemed i
 par(mfrow=c(2,2))
 plot(mod.lm)
 ```
-
+We 
 
 5)The errors have common constant variance (homoscedasticity).
 ```{r}
@@ -422,14 +422,14 @@ bptest(mod.lm)
 
 Both the traditional Breusch-Pagan test and the Studentized Breusch-Pagan test fail to reject the null hypothesis that the variance is homoskedastic. However the lack of even band in residuals vs fitted plot and curvature in scale-location plots suggests violation of this assumption though difficult to say due to sparsity of data. As we noted, at low sample size, these tests might have also lack the power.
 
-
+2)The conditional mean of the errors is 0.
 6)The errors are independent of one another.
 ```{r}
 durbinWatsonTest(mod.lm)
 par(mfrow=c(1,1))
 residualPlots(mod.lm)
 ```
-By the Durbin-Watson test, we fail to reject the null that the residuals are uncorrelated with one another. From the cross-sectional nature of the launch events, we can also feel more comfortable about this result. We also are able to reject the idea that the residuals correlate with our explanatory variables as well (slight but negligble curvature).
+By the Durbin-Watson test, we fail to reject the null that the residuals are uncorrelated with one another. From the cross-sectional nature of the launch events, we can also feel more comfortable about this result. We also are able to reject the idea that the residuals correlate with our explanatory variables as well (slight but negligble curvature), giving some plausibility to 0 conditional mean of the errors.
 
 
 
