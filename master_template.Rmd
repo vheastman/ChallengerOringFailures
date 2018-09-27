@@ -21,8 +21,8 @@ suppressPackageStartupMessages(library(dplyr))
 suppressPackageStartupMessages(library(Hmisc))
 suppressPackageStartupMessages(library(car))
 
-setwd("/Users/gurditchahal/w271_lab1")
-#setwd("/home/victoriaeastman/berkeley/w271/w271_lab1")
+#setwd("/Users/gurditchahal/w271_lab1")
+setwd("/home/victoriaeastman/berkeley/w271/w271_lab1")
 df <- read.csv("challenger.csv")
 ```
 
@@ -46,8 +46,7 @@ A glimpse of the data shows we have 5 variables in our dataset:
   
 We are primarily interested in the effects of temperature and pressure on o-ring failure. Seeing as the total number of primary field o-rings does not change for our observations and we have no particular reason to see it change, we discard this variable due to lack of immediate use/differentiating behavior between failed and successful launches. Similarly, we discard flight number due to lack of any immediate use.
 
-We can see that the `O.ring` variable has 3 distinct values: 0, 1, and 2. We are going to nuanced in our analysis and say we want to find the conditions that lead to *at least one* o-ring failure. Therefore, we will recategorize those flights with 2 failures as having 1 failure for the purposes of this study. 
-
+We can see that the `O.ring` variable has 3 distinct values: 0, 1, and 2. We are going to be nuanced in our analysis and say we want to find the conditions that lead to *at least one* o-ring failure. Therefore, we will recategorize those flights with 2 failures as having 1 failure for the purposes of this study. 
 
 ```{r}
 # We don't want to eliminate raw data
@@ -55,16 +54,14 @@ df$O.ring.total = df$O.ring
 df$O.ring[df$O.ring > 1] = 1
 ```
 
-
 In addition, we see that the dataset contains 23 data points from other shuttle launches and none of the variables are missing any entries. Interestingly, pressure is generally considered to be a continuous variable, however, we see three distinct values of 50, 100, and 200. We could potentially see reason to use this as a categorical variable in the regression estimation below. 
-
 
 ```{r}
 #quick check for potential collinearity as well as surface level relations
 cor(df[,c("Temp", "Pressure", "O.ring")])
 ```
-We take a quick look at correlation between variables to assess wether there might be collinearity as well as a rough gauge of predictive power between these variables prior to any transformations. We see a moderate negative correlation between O.ring failures and temperature and a weakly positive correlation between pressure and failures. We see negligible positive correlation between temperature and pressure and thus don't worry about colliniearity.
 
+We take a quick look at correlation between variables to assess wether there might be collinearity as well as a rough gauge of predictive power between these variables prior to any transformations. We see a moderate negative correlation between O.ring failures and temperature and a weakly positive correlation between pressure and failures. We see negligible positive correlation between temperature and pressure and thus don't worry about colliniearity.
 
 ```{r}
 #What does the distribution of temperatures look like?
@@ -200,12 +197,12 @@ w.n<-data.frame(Temperature=w$Temp, Failure=w$O.ring, trials=n$O.ring, proportio
 head(w.n)
 
 # Plot pi vs Temp
-plot(x=w$Temp, y=w$O.ring/n$O.ring, xlab="Temp(F)", ylab="Estimated probability", panel.first=grid(col="gray", lty="dotted"))
-curve(expr=predict(object=mod.fit2, newdata=data.frame(Temp=x), type="response"), col="red", add=TRUE, xlim=c(31,81))
+plot(x=w$Temp, y=w$O.ring/n$O.ring, xlab="Temp(F)", ylab="Estimated probability", panel.first=grid(col="gray", lty="dotted"), xlim=c(31,81))
+curve(expr=predict(object=mod.fit2, newdata=data.frame(Temp=x), type="response"), col="red", add=TRUE)
 
 # Plot Expected number of failures vs.Temp.
-
-
+plot(x=w$Temp, y=w$O.ring, xlab="Temp(F)", ylab="Estimated number of failures", panel.first=grid(col="gray", lty="dotted"), xlim=c(31,81))
+#curve(expr=predict(object=mod.fit2, newdata=data.frame(Temp=x), type="response"), col="red", add=TRUE)
 ```
 
 #### 5 (c) Include the 95% Wald confidence interval bands for $\pi$ on the plot. Why are the bands much wider for lower temperatures than for higher temperatures?
@@ -226,7 +223,7 @@ curve(expr=ci.pi(newdata=data.frame(Temp=x),mod.fit.obj = mod.fit2, alpha = 0.05
 
 curve(expr=ci.pi(newdata=data.frame(Temp=x),mod.fit.obj = mod.fit2, alpha = 0.05)$upper, col = "blue", lty="dotdash",add=TRUE,xlim=c(31,81))
 ```
-*Bands are wider due to change in probability across temperature gradient. Much steeper drop in temperature below and above 65 (similar to complete separation problem). Less of a drastic change in higher temperatures due to two "middle" values between 70 and 75.*
+*Bands are wider due to change in probability across temperature gradient. There is a much steeper drop in temperature below and above 65 (similar to complete separation problem). Less of a drastic change in higher temperatures due to two "middle" values between 70 and 75.*
 
 #### 5 (d) The temperature was 31 at launch for the Challenger in 1986. Estimate the probability of an O-ring failure using this temperature, and compute a corresponding confidence interval.  Discuss what assumptions need to be made in order to apply the inference procedures.
 
@@ -249,7 +246,36 @@ The estimated probability of o-ring failure at 31 F is `r round(pi.hat,4)` and t
 #### 5 (e) Rather than using Wald or profile LR intervals for the probability of failure, Dalalet al. (1989) use a parametric bootstrap to compute intervals. Their process was to (1) simulate a large number of data sets (n= 23 for each) from the estimated model of $$logit(\pi)=\beta_{0}+\beta_{1}*Temp$$;(2)estimate new models for each dataset,say $$logit(\pi)=Beta_{0}+Beta_{1}*Temp$$;and (3)compute at a specific temperature of interest. The authors used the 0.05 and 0.95 observed quantiles from the simulated distribution as their 90% confidence interval limits. Using the parametric bootstrap, compute 90% confidence intervals separately at temperatures of 31 and 72.27
 
 ```{r}
-#Todo: Bootstrapping CI
+library(boot) # Necessary because we're calculating a parametric bootstrap interval and this library is referenced in the book.
+
+# Get probs from mod.fit2
+predict.data <- data.frame(Temp=31:81)
+linear.pred=predict(object = mod.fit2, newdata = predict.data, #linear part of model
+                    type = "link", se = TRUE)
+pis = exp(linear.pred$fit)/(1+exp(linear.pred$fit))
+
+pi.hat.star <- function(data){
+  model <- glm(formula=O.ring~Temp,data=df,family=binomial(link = logit))
+
+  predict.data <- data.frame(Temp=c(31,72.27)) #data to predict on
+  
+  linear.pred=predict(object = model, newdata = predict.data, #linear part of model
+                        type = "link", se = TRUE)
+  
+  pi.hat <- exp(linear.pred$fit)/(1+exp(linear.pred$fit)) #estimated probability
+
+  return(pi.hat)
+}
+
+gensamples <- function(data, pis){
+  # Randomly determine temps
+  x <- data.frame(Temp=round(runif(nrow(data), min=31, max=81),0))
+  x$O.ring <- rbinom(n=nrow(data),size=1,prob=pis[x$Temp-30])
+  return(x)
+}
+
+results <- boot(data=df[,c("Temp", "O.ring")], statistic=pi.hat.star, sim="parametric", R=1000, ran.gen=gensamples, mle=pis)
+boot.ci(results, conf = 0.90, type="bca")
 ```
 
 #### 5 (f) Determine if a quadratic term is needed in the model for the temperature.
