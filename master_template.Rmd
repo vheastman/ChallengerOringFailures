@@ -316,8 +316,9 @@ pi.star <- double(nboot) #array to store probability estimates
 
 
 for (i in 1:nboot) { #for each bootstrap sample
-    df$O.star <- rbinom(n, 1, df$pred) #generate outcome for each temperature with the estimated probability
-    out.star <- glm(O.star ~Temp, family = binomial(link = logit),data=df) #fit new model on these generated outcomes
+    samp_df<-df[sample(nrow(df),size=n,replace=TRUE),]
+    samp_df$O.star <- rbinom(n, 1, samp_df$pred) #generate outcome for each temperature with the estimated probability
+    out.star <- glm(O.star ~Temp, family = binomial(link = logit),data=samp_df) #fit new model on these generated outcomes
     test=data.frame(Temp<-72.27) #test temperature
     pi.star[i] <- predict(object=out.star,newdata=test, type = "response") #predict probability of at least one O-ring failure for test temp.
     
@@ -326,8 +327,9 @@ mean(pi.star) #bootstrapped estimate of probability
 quantile(pi.star,c(.05,.95)) #90% confidence interval from bootstrap simulation
 
 for (i in 1:nboot) { #for each bootstrap sample
-    df$O.star <- rbinom(n, 1, df$pred) #generate outcome for each temperature with the estimated probability
-    out.star <- glm(O.star ~Temp, family = binomial(link = logit),data=df) #fit new model on these generated outcomes
+    samp_df<-df[sample(nrow(df),size=n,replace=TRUE),]
+    samp_df$O.star <- rbinom(n, 1, samp_df$pred) #generate outcome for each temperature with the estimated probability
+    out.star <- glm(O.star ~Temp, family = binomial(link = logit),data=samp_df) #fit new model on these generated outcomes
     test=data.frame(Temp<-31) #test temperature
     pi.star[i] <- predict(object=out.star,newdata=test, type = "response") #predict probability of at least one O-ring failure for test temp.
     
