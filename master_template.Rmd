@@ -254,6 +254,7 @@ linear.pred=predict(object = mod.fit2, newdata = predict.data, #linear part of m
                     type = "link", se = TRUE)
 pis = exp(linear.pred$fit)/(1+exp(linear.pred$fit))
 
+# Function to calculate desired statistic
 pi.hat.star <- function(data){
   model <- glm(formula=O.ring~Temp,data=df,family=binomial(link = logit))
 
@@ -267,6 +268,7 @@ pi.hat.star <- function(data){
   return(pi.hat)
 }
 
+# Function to generate random samples
 gensamples <- function(data, pis){
   # Randomly determine temps
   x <- data.frame(Temp=round(runif(nrow(data), min=31, max=81),0))
