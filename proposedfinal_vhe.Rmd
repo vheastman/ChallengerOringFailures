@@ -1,12 +1,12 @@
 ---
-title: "Lab 1 VHE"
-author: "Victoria Eastman"
+title: "Lab 1 VHE_GC"
+authors: "Victoria Eastman","Gurdit Chahal"
 date: "September 19, 2018"
 output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, warning = FALSE, fig.width = 8, fig.height = 4)
+knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ## I. Introduction
@@ -75,7 +75,7 @@ The distribution of the temperature explanatory variable looks to faintly resemb
 
 ### II (b) Bivariate Analysis
 
-```{r, out.height="4in", out.width="0.48\\textwidth"}
+```{r}
 #group each explanatory variable by O.ring failure
 for (i in 2:3){
   print(ggplot(df, aes(factor(O.ring), df[,i])) +
@@ -106,8 +106,7 @@ ggplot(df, aes(factor(Pressure), Temp)) +
 plot(Pressure~Temp,data=df, main="Pressure vs Temperature")
 ```
 
-Comparing temperature and pressure directly, we can see that there is a vaguely positive relationship between temperature and pressure. Under basic gas 
-laws, temperature is proportional to pressure, however, this relationship doesn't appear to hold in all cases of o-ring failure. 
+Comparing temperature and pressure directly, we can see that there is a vaguely positive relationship between temperature and pressure. Under basic gas laws, temperature is proportional to pressure, however, this relationship doesn't appear to hold in all cases of o-ring failure. 
 
 ```{r}
 #bin pressure to 200 or not
@@ -115,7 +114,9 @@ df$P200=df$Pressure
 df$P200[df$P200!=200]=0
 df$P200[df$P200==200]=1
 df$P200=factor(df$P200)
+```
 
+```{r}
 #how much does temperature vary by each pressure stage
 ggplot(df, aes(P200, Temp)) +
           geom_boxplot(aes(fill = P200)) + 
@@ -126,13 +127,13 @@ ggplot(df, aes(P200, Temp)) +
 ```{r}
 plot(Pressure~Temp,data=df, main="Pressure vs Temperature")
 ```
-Above we isolate the data points where pressure is 200 psi. The right boxplot (when pressure is 200 psi) has a much wider temperature range then when pressure is either 50 psi or 100 psi. This could be due to a lack of data points when the pressure is not 200 psi. 
+
+
 ```{r}
 #slicing by pressure, any distinct relations between failure and temperature?
 ggplot(df, aes(x = factor(O.ring), y = Temp, fill = factor(O.ring))) + geom_boxplot() +
 facet_wrap(~ Pressure, ncol = 3)
 ```
-Combining all three variables into the above boxplot, we can see that almost all o-ring failures occured at 200 psi with much lower temps than those that did not fail. Without an overlay of data points, we aren't able to determine how many points make up each of these ranges. 
 
 ## III. Book Questions
 
@@ -148,7 +149,14 @@ Combining all three variables into the above boxplot, we can see that almost all
 # Initial model
 mod.fit1<-glm(formula=O.ring~Pressure+Temp,data=df,family=binomial(link = logit))
 summary(mod.fit1)
-#mod.fit2<-glm(formula=O.ring~Pressure+Temp+Pressure:Temp,data=df,family=binomial(link = logit))
+
+# Include interaction between temperature and pressure to capture positive relationship between those variables
+mod.fit2<-glm(formula=O.ring~Pressure+Temp+Pressure:Temp,data=df,family=binomial(link = logit))
+summary(mod.fit2)
+
+# Turn Pressure into a factor
+mod.fit3<-glm(formula=O.ring~P200+Temp,data=df,family=binomial(link = logit))
+summary(mod.fit3)
 ```
 
 Our first estimated logistic regression model is
@@ -157,21 +165,26 @@ $$
 \mbox{logit}(\hat{\pi}) = 13.292360 + 0.0104\mbox{Pressure} - 0.228671\mbox{Temp}
 $$
 
+We include an interaction variable in the second
+
+$$
+\mbox{logit}(\hat{\pi}) = -27.217458 + 0.221088\mbox{Pressure} + 0.358212\mbox{Temp} - 0.003054\mbox{Pressure x Temp}
+$$
+
 #### 4 (c) Perform LRTs to judge the importance of the explanatory variables in the model.
 
 ```{r}
-Anova(mod.fit1,Test='LRT')
+#Anova(mod.fit1,Test='LRT')
+Anova(mod.fit2,Test='LRT')
 ```
 
-The likelihood ratio test evaluates the importance of each explanatory variable and interaction variable. For the first explanatory variable, pressure, we test the hypothesis: $H_{0}: \beta_{1} = 0$ vs $H_{a}: \beta_{1} \neq 0$. The test statistic is $-2log(\Lambda) = 1.5331$ and the p-value is 0.215648 so we fail to reject the null hypothesis that pressure has no effect on o-ring failure. For the second explanatory variable, temperature, we test the hypothesis: $H_{0}: \beta_{2} = 0$ vs $H_{a}: \beta_{2} \neq 0$. The test statistic is $-2log(\Lambda) = 7.7542$ and the p-value is 0.005359 so we reject the null hypothesis and conclude that there is evidence of an interaction between temperature and o-ring failure. 
+The likelihood ratio test evaluates the importance of each explanatory variable and interaction variable. For the first explanatory variable, pressure, we test the hypothesis: $H_{0}: \beta_{1} = 0$ vs $H_{a}: \beta_{1} \neq 0$. The test statistic is $-2log(\Lambda) = 1.5331$ and the p-value is 0.215648 so we fail to reject the null hypothesis that pressure has no effect on o-ring failure. For the second explanatory variable, temperature, we test the hypothesis: $H_{0}: \beta_{2} = 0$ vs $H_{a}: \beta_{2} \neq 0$. The test statistic is $-2log(\Lambda) = 7.7542$ and the p-value is 0.005359 so we reject the null hypothesis and conclude that there is evidence of an interaction between temperature and o-ring failure. Finally, we test the interaction variable, $\mbox{Pressure x Temp}$, with the hypothesis: $H_{0}: \beta_{3} = 0$ vs $H_{a}: \beta_{3} \neq 0$. The test statistic is $-2log(\Lambda) = 0.7069$ and the p-value is 0.400478 so we fail to reject the null hypothesis that the effect of temperature and pressure on o-ring failure depend on each other.
 
 #### 4 (d) Why did they remove pressure? Why could this be a problem?
 
 *In terms of statistical significance, pressure wasn't found to be statistically significant. Potential problems could be losing precision on temp as well as in probability, especially for edge cases.*
 
 ### Question 5
-
-Next we estimate the model with only one regressor: Temperature.
 
 #### 5 (a) Estimate the model
 
@@ -180,9 +193,10 @@ $$\mbox{logit}(\pi)=\beta_0+\beta_{1}\mbox{Temp}$$
 ```{r}
 mod.fit2<-glm(formula=O.ring~Temp,data=df,family=binomial(link = logit))
 summary(mod.fit2)
-```
 
+```
 The estimated logistic regression model is
+
 $$
 \mbox{logit}(\hat{\pi}) = 15.0429 - 0.2322\mbox{Temp}
 $$
@@ -231,64 +245,95 @@ curve(expr=ci.pi(newdata=data.frame(Temp=x),mod.fit.obj = mod.fit2, alpha = 0.05
 
 ```{r}
 alpha=0.05
-# Set data to predict on
-predict.data <- data.frame(Temp=31) 
-# Linear part of model
-linear.pred=predict(object = mod.fit2, newdata = predict.data,
+predict.data <- data.frame(Temp=31) #data to predict on
+
+linear.pred=predict(object = mod.fit2, newdata = predict.data, #linear part of model
                       type = "link", se = TRUE)
-# Estimate probability
-pi.hat = exp(linear.pred$fit)/(1+exp(linear.pred$fit)) 
-# Confidence interval before exponentiation
-CI.lin.pred = linear.pred$fit + qnorm(p = c(alpha/2, 1-alpha/2))*linear.pred$se 
-# Actual interval
-CI.pi = exp(CI.lin.pred)/(1+exp(CI.lin.pred)) 
+
+pi.hat = exp(linear.pred$fit)/(1+exp(linear.pred$fit)) #estimated probability
+
+CI.lin.pred = linear.pred$fit + qnorm(p = c(alpha/2, 1-alpha/2))*linear.pred$se #confidence interval before exponentiation
+
+CI.pi = exp(CI.lin.pred)/(1+exp(CI.lin.pred)) #actual interval
 ```
 
 The estimated probability of o-ring failure at 31 F is `r round(pi.hat,4)` and the corresponding confidence interval is `r round(CI.pi,4)`. 
 
-#### 5 (e) 
+#### 5 (e) Rather than using Wald or profile LR intervals for the probability of failure, Dalalet al. (1989) use a parametric bootstrap to compute intervals. Their process was to (1) simulate a large number of data sets (n= 23 for each) from the estimated model of $$logit(\pi)=\beta_{0}+\beta_{1}*Temp$$;(2) estimate new models for each data set,say $$logit(\pi)=Beta_{0}+Beta_{1}*Temp$$;and (3) compute at a specific temperature of interest. The authors used the 0.05 and 0.95 observed quantiles from the simulated distribution as their 90% confidence interval limits. Using the parametric bootstrap, compute 90% confidence intervals separately at temperatures of 31 and 72.27
 
 ```{r}
-# First, fit on observed
-out <- glm(formula=O.ring~Temp, family = binomial(link = logit), data=df) 
+library(boot) # Necessary because we're calculating a parametric bootstrap interval and this library is referenced in the book.
+
+# Get probs from mod.fit2
+predict.data <- data.frame(Temp=31:81) 
+linear.pred=predict(object = mod.fit2, newdata = predict.data, #linear part of model
+                    type = "link", se = TRUE)
+pis = exp(linear.pred$fit)/(1+exp(linear.pred$fit))
+
+# Function to calculate desired statistic
+pi.hat.star <- function(data){
+  model <- glm(formula=O.ring~Temp,data=df,family=binomial(link = logit))
+
+  predict.data <- data.frame(Temp=c(31,72.27)) #data to predict on
+  
+  linear.pred=predict(object = model, newdata = predict.data, #linear part of model
+                        type = "link", se = TRUE)
+  
+  pi.hat <- exp(linear.pred$fit)/(1+exp(linear.pred$fit)) #estimated probability
+
+  return(pi.hat)
+}
+
+# Function to generate random samples
+gensamples <- function(data, pis){
+  # Randomly determine temps
+  x <- data.frame(Temp=round(runif(nrow(data), min=31, max=81),0))
+  x$O.ring <- rbinom(n=nrow(data),size=1,prob=pis[x$Temp-30])
+  return(x)
+}
+
+results <- boot(data=df[,c("Temp", "O.ring")], statistic=pi.hat.star, sim="parametric", R=1000, ran.gen=gensamples, mle=pis)
+boot.ci(results, conf = 0.90, type="bca")
+```
+
+```{r}
+
+out <- glm(formula=O.ring~Temp, family = binomial(link = logit), data=df) #fit on observed
 summary(out)
 
-# Estimated probabilities from observation-fitted model
-df$pred <- predict(out,data=df$Temp, type = "response") 
+df$pred <- predict(out,data=df$Temp, type = "response") #estimated probabilities from observation-fitted model
 
 n <- length(df$Temp) #sample size of 23 , like original data
 nboot <- 1000 #number of bootstrap samples
 pi.star <- double(nboot) #array to store probability estimates
 
-for (i in 1:nboot) { #for each bootstrap sample
-    samp_df<-df[sample(nrow(df),size=n,replace=TRUE),]
-    # Generate outcome for each temperature with the estimated probability
-    samp_df$O.star <- rbinom(n, 1, samp_df$pred) 
-    # Fit new model on these generated outcomes
-    out.star <- glm(O.star ~Temp, family = binomial(link = logit),data=samp_df) 
-    test=data.frame(Temp<-72.27) #test temperature
-    # Predict probability of at least one O-ring failure for test temp.
-    pi.star[i] <- predict(object=out.star,newdata=test, type = "response") 
-    
-}
-pi.star.72 <- mean(pi.star) #bootstrapped estimate of probability
-ci.72 <- quantile(pi.star,c(.05,.95)) #90% confidence interval from bootstrap simulation
+
 
 for (i in 1:nboot) { #for each bootstrap sample
     samp_df<-df[sample(nrow(df),size=n,replace=TRUE),]
-    # Generate outcome for each temperature with the estimated probability
-    samp_df$O.star <- rbinom(n, 1, samp_df$pred) 
-    # Fit new model on these generated outcomes
-    out.star <- glm(O.star ~Temp, family = binomial(link = logit),data=samp_df) 
-    test=data.frame(Temp<-31) #test temperature
-    # Predict probability of at least one O-ring failure for test temp.
-    pi.star[i] <- predict(object=out.star,newdata=test, type = "response") 
+    samp_df$O.star <- rbinom(n, 1, samp_df$pred) #generate outcome for each temperature with the estimated probability
+    out.star <- glm(O.star ~Temp, family = binomial(link = logit),data=samp_df) #fit new model on these generated outcomes
+    test=data.frame(Temp<-72.27) #test temperature
+    pi.star[i] <- predict(object=out.star,newdata=test, type = "response") #predict probability of at least one O-ring failure for test temp.
     
 }
-pi.star.31 <- mean(pi.star) #bootstrapped estimate of probability
-ci.31 <- quantile(pi.star,c(.05,.95)) #90% confidence interval from bootstrap simulation
+mean(pi.star) #bootstrapped estimate of probability
+quantile(pi.star,c(.05,.95)) #90% confidence interval from bootstrap simulation
+
+for (i in 1:nboot) { #for each bootstrap sample
+    samp_df<-df[sample(nrow(df),size=n,replace=TRUE),]
+    samp_df$O.star <- rbinom(n, 1, samp_df$pred) #generate outcome for each temperature with the estimated probability
+    out.star <- glm(O.star ~Temp, family = binomial(link = logit),data=samp_df) #fit new model on these generated outcomes
+    test=data.frame(Temp<-31) #test temperature
+    pi.star[i] <- predict(object=out.star,newdata=test, type = "response") #predict probability of at least one O-ring failure for test temp.
+    
+}
+mean(pi.star) #bootstrapped estimate of probability
+quantile(pi.star,c(.05,.95)) #90% confidence interval from bootstrap simulation
+
+
 ```
-The bootstrapped 90% confidence interval for 31&deg;F is `r round(ci.31,4)` and for 72.27&deg;F is `r round(ci.72)`. 
+
 
 #### 5 (f) Determine if a quadratic term is needed in the model for the temperature.
 
@@ -299,13 +344,16 @@ anova(mod.fit2,mod.fit.Ha,test="Chisq")
 
 *Quadratic term fails to produce significant effect in change in residual deviance and so we fail to reject that the coefficient is actually 0 for the quadratic term.*
 
-### IV. Estimate Linear Regression Model
+## Final Question
 
-#### 3 (a). Interpret the main result of your final model in terms of both odds and probability of failure
+### 3. In addition to the questions in Question 4 and 5, answer the following questions:
 
-#### 3 (b). With the same set of explanatory variables in your final model, estimate a linear regression model. Explain the model results; conduct model diagnostic; and assess the validity of the model assumptions. Would you use the linear regression model or binary logistic regression in this case. Please explain.
+#### a. Interpret the main result of your final model in terms of both odds and probability of failure
+
+#### b. With the same set of explanatory variables in your final model, estimate a linear regression model. Explain the model results; conduct model diagnostic; and assess the validity of the model assumptions. Would you use the linear regression model or binary logistic regression in this case. Please explain.
 
 ```{r}
+
 mod.lm <- lm(O.ring ~ Temp+P200, data = df)
 summary(mod.lm)
 ```
@@ -314,26 +362,19 @@ The estimated linear regression model is
 $$
 \hat{\pi} = 2.658765 + 0.001962\mbox{Pressure} - 0.038136\mbox{Temp}
 $$
-
-#### The assumptions we want to test/be on the look out for:
-
-  1. The model is linear in it's parameters.
-  2. The conditional mean of the errors is 0. 
-  3. There is a random sampling of observations. *don't have choice here*
-  4. There is no multi-collinearity/perfect collinearity amongst explanatory variables. *passed in EDA*
-  5. The errors have common constant variance (homoscedasticity).
-  6. The errors are independent of one another.
-  7. The errors are normally distributed. *not required for BLUE but do need for reliable inference*
+#The assumptions we want to test/be on the look out for:
+1)The model is linear in it's parameters.
+2)The conditional mean of the errors is 0. 
+3)There is a random sampling of observations. *don't have choice here*
+4) There is no multi-collinearity/perfect collinearity amongst explanatory variables. *passed in EDA*
+5)The errors have common constant variance (homoscedasticity).
+6)The errors are independent of one another.
+7)The errors are normally distributed. *not required for BLUE but do need for reliable inference*
 
 We note since are observations are less than 30, we can't make asymptotic arguments for our parameter estimates. Moreover, for some of our tests, such as Shapiro, we will likely fail to reject due to lack of data and so we must test these assumptions from multiple angles (visualizations, etc.).
 
-  *7. The errors are normally distributed.*
+7)The errors are normally distributed.
 ```{r}
-# Justification for these packages: used commonly in 203 to asses LR assumptions
-suppressPackageStartupMessages(library(lmtest)) 
-suppressPackageStartupMessages(library(plm)) 
-suppressPackageStartupMessages(library(gvlma))
-
 hist(mod.lm$residuals)
 qqnorm(mod.lm$residuals)
 qqline(mod.lm$residuals)
@@ -342,36 +383,41 @@ coeftest(mod.lm, vcov=vcovHC(mod.lm))
 ```
 We see both from the histogram and the qq-plot that the distribution deviates from normality at the tail ends. We particularly see a positive skew present in our distribution. With a p-value 0.009 for the Shapiro-Wilk test we can safely reject the null hypothesis that the residuals follow a normal distribution. Hence, we can't gaurantee precision on our standard errors. We can switch to robust standard errors as done in the last line.
 
+
+
 ```{r}
 summary(mod.lm$fitted.values)
 ```
-
 We see that the predictions are outside of the range for a probability. This is concerning as we want to assess risk of O-ring failure and probability would be well-suited for that task. Having a range that doesn't correspond gives us little sense of what's going on as the scale becomes relatively arbitrary.
 
 ```{r}
 scatterplot(mod.lm$residuals,as.numeric(df$O.ring))
-```
 
+```
 We already knew from the binary nature of the outcome that a continuous seemed innapropriate, however the line of residuals vs the O.ring failure outcome does manage to somewhat separate distinct cases (we see 4 of the observations are on the "wrong" side of the decision boundary). A linear relation seems roughly justified.
+
+
+
 
 ```{r}
 par(mfrow=c(2,2))
 plot(mod.lm)
 ```
-
 We 
 
-  *5. The errors have common constant variance (homoscedasticity).*
+5)The errors have common constant variance (homoscedasticity).
 ```{r}
+
 ncvTest(mod.lm)
+library(lmtest)
 bptest(mod.lm)
+
 ```
 
 Both the traditional Breusch-Pagan test and the Studentized Breusch-Pagan test fail to reject the null hypothesis that the variance is homoskedastic. However the lack of even band in residuals vs fitted plot and curvature in scale-location plots suggests violation of this assumption though difficult to say due to sparsity of data. As we noted, at low sample size, these tests might have also lack the power.
 
-  *2. The conditional mean of the errors is 0.*
-  
-  *6. The errors are independent of one another.*
+2)The conditional mean of the errors is 0.
+6)The errors are independent of one another.
 ```{r}
 durbinWatsonTest(mod.lm)
 par(mfrow=c(1,1))
@@ -379,7 +425,15 @@ residualPlots(mod.lm)
 ```
 By the Durbin-Watson test, we fail to reject the null that the residuals are uncorrelated with one another. From the cross-sectional nature of the launch events, we can also feel more comfortable about this result. We also are able to reject the idea that the residuals correlate with our explanatory variables as well (slight but negligble curvature), giving some plausibility to 0 conditional mean of the errors.
 
+
+
+
+
+
+
 ```{r}
+
+library(gvlma)
 gv.mod.lm <- gvlma(mod.lm)
 summary(gv.mod.lm) 
 ```
@@ -387,6 +441,4 @@ From the gvlma we are added some assurance in that Global Stat- fail to reject r
 
 After review of both models, we would opt for a logistic regression for several reasons. First, the output is more desirable in that we can compare odds of failures as well as compute actual probabilities of failure whereas the linear regression goes out of range. Moreover, the linear regression's questionability in terms of inference (failed normality of errors), likely keeps us restricted to the observed data in terms of predictions.
 
-#### V. Conclusion
-
-In conclusion, we found that 
+##conclusion
