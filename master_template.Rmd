@@ -1,7 +1,10 @@
 ---
-title: "Lab 1 VHE"
-author: "Victoria Eastman"
-date: "September 19, 2018"
+title: "W271 Lab 1"
+author: 
+  - "Gurdit Chahal"
+  - "Zach Day"
+  - "Victoria Eastman"
+date: "October 1, 2018"
 output: pdf_document
 ---
 
