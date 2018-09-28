@@ -1,28 +1,30 @@
 ---
-title: "Lab 1 VHE_GC"
-authors: "Victoria Eastman","Gurdit Chahal"
+title: "Lab 1 VHE"
+author: "Victoria Eastman"
 date: "September 19, 2018"
-output: pdf_document
+output:
+  html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE)
+
 ```
 
 ## I. Introduction
 
-Following the Challenger Space Shuttle's destruction in 1986, a commission appointed by President Reagan determined the cause to be a gas leak through a field joint. This problem was well-known to NASA and is frequently referred to as an o-ring failure. In 1989, Dalal et al. collected data from previous space shuttle launches to study the probability of an o-ring failure under conditions similar to those that occured during the Challenger launch in 1986. In this analysis, we will use their dataset to mimic their study and attempt to determine the effect of key explanatory variables (temperature and pressure) on o-ring failure. In the end we specified a logistic regression model on temperature with the following formula:
+Following the Challenger Space Shuttle's destruction in 1986, a commission appointed by President Reagan determined the cause to be a gas leak through a field joint. This problem was well-known to NASA and is frequently referred to as an o-ring failure. In 1989, Dalal et al. collected data from previous space shuttle launches to study the probability of an o-ring failure under conditions similar to those that occured during the Challenger launch in 1986. In this analysis, we will use their dataset to mimic their study and attempt to determine the effect of key explanatory variables (temperature and pressure) on o-ring failure. In the end we specified a logistic regression model on temperature with the following formula:  
 
 We first begin our analysis with a thorough exploratory data analysis in order to understand the variables we are working with. Then, we estimate a series of models that we use to predict o-ring failure. 
 
-```{r}
+```{r message = FALSE}
 # Import libraries
-suppressPackageStartupMessages(library(dplyr))
-suppressPackageStartupMessages(library(Hmisc))
-suppressPackageStartupMessages(library(car))
+library(dplyr)
+library(Hmisc)
+library(car)
+library(knitr)
 
-setwd("/Users/gurditchahal/w271_lab1")
-#setwd("/home/victoriaeastman/berkeley/w271/w271_lab1")
 df <- read.csv("challenger.csv")
 ```
 
@@ -44,9 +46,9 @@ A glimpse of the data shows we have 5 variables in our dataset:
   - O.ring: number of primary field o-ring failures
   - Number: total number of primary field o-rings
   
-We are primarily interested in the effects of temperature and pressure on o-ring failure. Seeing as the total number of primary field o-rings does not change for our observations and we have no particular reason to see it change, we discard this variable due to lack of immediate use/differentiating behavior between failed and successful launches. Similarly, we discard flight number due to lack of any immediate use.
+We are primarily interested in the effects of temperature and pressure on o-ring failure. Seeing as the total number of primary field o-rings does not change for our observations and we have no particular reason to see it change, we discard this variable due to lack of immediate use/differentiating behavior between failed and successful launches. Similarly, we discard flight number due to lack of any immediate use.  
 
-We can see that the `O.ring` variable has 3 distinct values: 0, 1, and 2. We are going to be nuanced in our analysis and say we want to find the conditions that lead to *at least one* o-ring failure. Therefore, we will recategorize those flights with 2 failures as having 1 failure for the purposes of this study. 
+We can see that the `O.ring` variable has 3 distinct values: 0, 1, and 2. We are going to be nuanced in our analysis and say we want to find the conditions that lead to *at least one* o-ring failure. Therefore, we will recategorize those flights with 2 failures as having 1 failure for the purposes of this study.  
 
 ```{r}
 # We don't want to eliminate raw data
@@ -54,16 +56,16 @@ df$O.ring.total = df$O.ring
 df$O.ring[df$O.ring > 1] = 1
 ```
 
-In addition, we see that the dataset contains 23 data points from other shuttle launches and none of the variables are missing any entries. Interestingly, pressure is generally considered to be a continuous variable, however, we see three distinct values of 50, 100, and 200. We could potentially see reason to use this as a categorical variable in the regression estimation below. 
+In addition, we see that the dataset contains 23 data points from other shuttle launches and none of the variables are missing any entries. Interestingly, pressure is generally considered to be a continuous variable, however, we see three distinct values of 50, 100, and 200. We could potentially see reason to use this as a categorical variable in the regression estimation below.  
 
 ```{r}
 #quick check for potential collinearity as well as surface level relations
-cor(df[,c("Temp", "Pressure", "O.ring")])
+kable(round(cor(df[,c("Temp", "Pressure", "O.ring")]), 4))
 ```
 
-We take a quick look at correlation between variables to assess wether there might be collinearity as well as a rough gauge of predictive power between these variables prior to any transformations. We see that there is no perfect collinearity. We see a moderate negative correlation between O.ring failures and temperature and a weakly positive correlation between pressure and failures. We see negligible positive correlation between temperature and pressure and thus don't worry about colliniearity.
+We take a quick look at correlation between variables to assess wether there might be collinearity as well as a rough gauge of predictive power between these variables prior to any transformations. We see a moderate negative correlation between O.ring failures and temperature and a weakly positive correlation between pressure and failures. We see negligible positive correlation between temperature and pressure and thus don't worry about colliniearity.  
 
-```{r}
+```{r, HistTemp, out.height="4in", out.width="0.75\\textwidth", fig.align='center'}
 #What does the distribution of temperatures look like?
 ggplot(df, aes(x = Temp)) +
   geom_histogram(aes(y = ..density..), binwidth = 0.2, fill="#0072B2", colour="black") +
@@ -71,11 +73,11 @@ ggplot(df, aes(x = Temp)) +
   theme(plot.title = element_text(lineheight=1, face="bold"))
 ```
 
-The distribution of the temperature explanatory variable looks to faintly resemble a normal distribution with a very slight negative skew. Due to this, we see no compelling reason to take a log transformation of the variable at this stage. The mode of temperatures is 70 and the range is `r range(df$Temp)`. 
+The distribution of the temperature explanatory variable looks to faintly resemble a normal distribution with a very slight negative skew. Due to this, we see no compelling reason to take a log transformation of the variable at this stage. The mode of temperatures is 70 and the range is `r range(df$Temp)`.  
 
 ### II (b) Bivariate Analysis
 
-```{r}
+```{r out.height="4in", out.width="0.48\\textwidth"}
 #group each explanatory variable by O.ring failure
 for (i in 2:3){
   print(ggplot(df, aes(factor(O.ring), df[,i])) +
@@ -86,56 +88,36 @@ for (i in 2:3){
 }
 ```
 
-The boxplot above of temperature grouped by o-ring failure shows the average temperature when o-rings failed was lower than when they did not. Also, the overlay scatterplot shows the mismatch of data: there's much more data for non-failures than failures. The second boxplot for pressure shows that all but 2 o-ring failures occured under high pressure conditions. Also, for non-failures, the mean and 75th percentile are overlapping, indicating that the data is skewed. 
+The boxplot above of temperature grouped by o-ring failure shows the average temperature when o-rings failed was lower than when they did not. Also, the overlay scatterplot shows the mismatch of data: there's much more data for non-failures than failures. The second boxplot for pressure shows that all but 2 o-ring failures occured under high pressure conditions. Also, for non-failures, the mean and 75th percentile are overlapping, indicating that the data is skewed.  
 
-```{r}
+```{r out.height="4in", out.width="0.75\\textwidth", fig.align='center'}
 #How do failures vary by pressure level?
 ggplot(df,aes(x=factor(O.ring)))+geom_histogram(stat='count')+facet_grid(~Pressure)
 ```
 
-The above plot reinforces the finding from above that the data has a negative skew with most of the data for both failures and non-failures occuring under pressure of 200 psi. 
+The above plot reinforces the aforementioned finding that the data has a negative skew with most of the data for both failures and non-failures occuring under pressure of 200 psi.  
 
-```{r}
+```{r out.height="4in", out.width="0.75\\textwidth", fig.align='center'}
 plot(O.ring~Temp,data=df, main="O-ring Failures vs Temperature")
 ```
 
-Directly looking at the distribution of o-ring failures to temperature, we can determine our data is not completely separated (hence traditional logistic regression is still a valid possibility for model selection). 
+Directly looking at the distribution of o-ring failures to temperature, we can determine our data is not completely separated (hence traditional logistic regression is still a valid possibility for model selection).  
 
-```{r}
+```{r out.height="4in", out.width="0.75\\textwidth", fig.align='center'}
 #how much does temperature vary by each pressure stage
 ggplot(df, aes(factor(Pressure), Temp)) +
           geom_boxplot(aes(fill = factor(Pressure))) + 
           geom_jitter() +
           ggtitle( "Temperature by Pressure") + 
           theme(plot.title = element_text(lineheight=1, face="bold"))
-```
-```{r}
-plot(Pressure~Temp,data=df, main="Pressure vs Temperature")
-```
-Comparing temperature and pressure directly, we can see that there is a vaguely positive relationship between temperature and pressure. Under basic gas laws, temperature is proportional to pressure, however, this relationship doesn't appear to hold in all cases of o-ring failure. 
-```{r}
-#bin pressure to 200 or not
-df$P200=df$Pressure
-df$P200[df$P200!=200]=0
-df$P200[df$P200==200]=1
-df$P200=factor(df$P200)
 
-```
-
-```{r}
-#how much does temperature vary by each pressure stage
-ggplot(df, aes(P200, Temp)) +
-          geom_boxplot(aes(fill = P200)) + 
-          geom_jitter() +
-          ggtitle( "Temperature by Pressure") + 
-          theme(plot.title = element_text(lineheight=1, face="bold"))
-```
-```{r}
 plot(Pressure~Temp,data=df, main="Pressure vs Temperature")
 ```
 
+Comparing temperature and pressure directly, we can see that there is a vaguely positive relationship between temperature and pressure. Under basic gas laws, temperature is proportional to pressure, however, this relationship doesn't appear to hold in all cases of o-ring failure.  
 
-```{r}
+
+```{r out.height="4in", out.width="0.75\\textwidth", fig.align='center'}
 #slicing by pressure, any distinct relations between failure and temperature?
 ggplot(df, aes(x = factor(O.ring), y = Temp, fill = factor(O.ring))) + geom_boxplot() +
 facet_wrap(~ Pressure, ncol = 3)
@@ -147,32 +129,31 @@ facet_wrap(~ Pressure, ncol = 3)
 
 #### 4 (a) Why is independence of each observation necessary?
 
-*This independence assumption is necessary for deriving the likelihood-based solution as we can take products of the probabilities. Potential issues is that the quality/durability of the O-ring might be dependent on the factory or even batch that it came from (clustering) and could interfere with producing a more accurate estimate when left unaccounted for. Moreover damage in one O-ring could affect the probability of damage in subsequent O-rings (might be easier for the system to collapse as a whole).*
+*This independence assumption is necessary for deriving the likelihood-based solution as we can take products of the probabilities. Potential issues is that the quality/durability of the O-ring might be dependent on the factory or even batch that it came from (clustering) and could interfere with producing a more accurate estimate when left unaccounted for. Moreover damage in one O-ring could affect the probability of damage in subsequent O-rings (might be easier for the system to collapse as a whole).*  
 
-#### 4 (b) Estimate logistic regression model
+#### 4 (b) Estimate logistic regression model  
 
 ```{r}
 # Initial model
 mod.fit1<-glm(formula=O.ring~Pressure+Temp,data=df,family=binomial(link = logit))
 summary(mod.fit1)
 
-# Include interaction between temperature and pressure to capture positive relationship between those variables
+# Include interaction between temperature and pressure to capture 
+# positive relationship between those variables
 mod.fit2<-glm(formula=O.ring~Pressure+Temp+Pressure:Temp,data=df,family=binomial(link = logit))
 summary(mod.fit2)
 
 # Turn Pressure into a factor
-mod.fit3<-glm(formula=O.ring~P200+Temp,data=df,family=binomial(link = logit))
+mod.fit3<-glm(formula=O.ring~factor(Pressure)+Temp,data=df,family=binomial(link = logit))
 summary(mod.fit3)
 ```
 
 Our first estimated logistic regression model is
-
 $$
 \mbox{logit}(\hat{\pi}) = 13.292360 + 0.0104\mbox{Pressure} - 0.228671\mbox{Temp}
 $$
 
 We include an interaction variable in the second
-
 $$
 \mbox{logit}(\hat{\pi}) = -27.217458 + 0.221088\mbox{Pressure} + 0.358212\mbox{Temp} - 0.003054\mbox{Pressure x Temp}
 $$
@@ -184,11 +165,11 @@ $$
 Anova(mod.fit2,Test='LRT')
 ```
 
-The likelihood ratio test evaluates the importance of each explanatory variable and interaction variable. For the first explanatory variable, pressure, we test the hypothesis: $H_{0}: \beta_{1} = 0$ vs $H_{a}: \beta_{1} \neq 0$. The test statistic is $-2log(\Lambda) = 1.5331$ and the p-value is 0.215648 so we fail to reject the null hypothesis that pressure has no effect on o-ring failure. For the second explanatory variable, temperature, we test the hypothesis: $H_{0}: \beta_{2} = 0$ vs $H_{a}: \beta_{2} \neq 0$. The test statistic is $-2log(\Lambda) = 7.7542$ and the p-value is 0.005359 so we reject the null hypothesis and conclude that there is evidence of an interaction between temperature and o-ring failure. Finally, we test the interaction variable, $\mbox{Pressure x Temp}$, with the hypothesis: $H_{0}: \beta_{3} = 0$ vs $H_{a}: \beta_{3} \neq 0$. The test statistic is $-2log(\Lambda) = 0.7069$ and the p-value is 0.400478 so we fail to reject the null hypothesis that the effect of temperature and pressure on o-ring failure depend on each other.
+The likelihood ratio test evaluates the importance of each explanatory variable and interaction variable. For the first explanatory variable, pressure, we test the hypothesis: $H_{0}: \beta_{1} = 0$ vs $H_{a}: \beta_{1} \neq 0$. The test statistic is $-2log(\Lambda) = 1.5331$ and the p-value is 0.215648 so we fail to reject the null hypothesis that pressure has no effect on o-ring failure. For the second explanatory variable, temperature, we test the hypothesis: $H_{0}: \beta_{2} = 0$ vs $H_{a}: \beta_{2} \neq 0$. The test statistic is $-2log(\Lambda) = 7.7542$ and the p-value is 0.005359 so we reject the null hypothesis and conclude that there is evidence of an interaction between temperature and o-ring failure. Finally, we test the interaction variable, $\mbox{Pressure x Temp}$, with the hypothesis: $H_{0}: \beta_{3} = 0$ vs $H_{a}: \beta_{3} \neq 0$. The test statistic is $-2log(\Lambda) = 0.7069$ and the p-value is 0.400478 so we fail to reject the null hypothesis that the effect of temperature and pressure on o-ring failure depend on each other.  
 
 #### 4 (d) Why did they remove pressure? Why could this be a problem?
 
-*In terms of statistical significance, pressure wasn't found to be statistically significant. Potential problems could be losing precision on temp as well as in probability, especially for edge cases.*
+*In terms of statistical significance, pressure wasn't found to be statistically significant. Potential problems could be losing precision on temp as well as in probability, especially for edge cases.*  
 
 ### Question 5
 
@@ -199,7 +180,6 @@ $$\mbox{logit}(\pi)=\beta_0+\beta_{1}\mbox{Temp}$$
 ```{r}
 mod.fit2<-glm(formula=O.ring~Temp,data=df,family=binomial(link = logit))
 summary(mod.fit2)
-
 ```
 The estimated logistic regression model is
 
@@ -208,31 +188,39 @@ $$
 $$
 
 #### 5 (b) 
-Construct two plots: (1)$\pi$ vs. Temp and (2) Expected number of failures vs. Temp. Use a temperature range of 31 to 81 on the x-axis even though the minimum temperature in the data set was 53.
+Construct two plots: (1)$\pi$ vs. Temp and (2) Expected number of failures vs. Temp. Use a temperature range of 31 to 81 on the x-axis even though the minimum temperature in the data set was 53.  
 
-```{r}
+```{r out.height="4in", out.width="0.75\\textwidth", fig.align='center'}
 # 
 w<-aggregate(formula=O.ring~Temp, data=df, FUN=sum)
 n<-aggregate(formula=O.ring~Temp, data=df, FUN=length)
-w.n<-data.frame(Temperature=w$Temp, Failure=w$O.ring, trials=n$O.ring, proportion=round(w$O.ring/n$O.ring,4))
-head(w.n)
+w.n<-data.frame(Temperature=w$Temp, Failure=w$O.ring, trials=n$O.ring,
+                proportion=round(w$O.ring/n$O.ring,4))
+kable(head(w.n))
 
 # Plot pi vs Temp
-plot(x=w$Temp, y=w$O.ring/n$O.ring, xlab="Temp(F)", ylab="Estimated probability", panel.first=grid(col="gray", lty="dotted"), xlim=c(31,81))
-curve(expr=predict(object=mod.fit2, newdata=data.frame(Temp=x), type="response"), col="red", add=TRUE)
+plot(x=w$Temp, y=w$O.ring/n$O.ring, xlab="Temp(F)", ylab="Estimated probability",
+     panel.first=grid(col="gray", lty="dotted"), xlim=c(31,81))
+curve(expr=predict(object=mod.fit2, newdata=data.frame(Temp=x), 
+                   type="response"), col="red", add=TRUE)
 
 # Plot Expected number of failures vs.Temp.
-plot(x=w$Temp, y=w$O.ring, xlab="Temp(F)", ylab="Estimated number of failures", panel.first=grid(col="gray", lty="dotted"), xlim=c(31,81))
+plot(x=w$Temp, y=w$O.ring, xlab="Temp(F)", ylab="Estimated number of failures",
+     panel.first=grid(col="gray", lty="dotted"), xlim=c(31,81))
 #curve(expr=predict(object=mod.fit2, newdata=data.frame(Temp=x), type="response"), col="red", add=TRUE)
 ```
 
-#### 5 (c) Include the 95% Wald confidence interval bands for $\pi$ on the plot. Why are the bands much wider for lower temperatures than for higher temperatures?
+#### 5 (c) Include the 95% Wald confidence interval bands for $\pi$ on the plot. Why are the bands much wider for lower temperatures than for higher temperatures?  
 
-```{r}
-plot(x=w$Temp,y=w$O.ring/n$O.ring,xlab="Temp(F)", ylab = "Estimated probability", panel.first =grid(col = "gray", lty = "dotted"))
-curve(expr=predict(object=mod.fit2,newdata=data.frame(Temp = x), type = "response"), col = "red", add=TRUE,xlim=c(31,81))
+```{r out.height="4in", out.width="0.75\\textwidth", fig.align='center'}
+plot(x=w$Temp,y=w$O.ring/n$O.ring,xlab="Temp(F)", ylab = "Estimated probability",
+     panel.first =grid(col = "gray", lty = "dotted"))
+curve(expr=predict(object=mod.fit2,newdata=data.frame(Temp = x), 
+                   type = "response"), col = "red", add=TRUE,xlim=c(31,81))
 
-ci.pi<-function(newdata,mod.fit.obj,alpha){linear.pred <- predict(object = mod.fit.obj, newdata =newdata, type = "link", se = TRUE)
+ci.pi<-function(newdata,mod.fit.obj,alpha){linear.pred <- predict(object = mod.fit.obj,
+                                                                  newdata =newdata, type =
+                                                                        "link", se = TRUE)
 CI.lin.pred.lower <- linear.pred$fit - qnorm(p =1-alpha/2)*linear.pred$se
 CI.lin.pred.upper <- linear.pred$fit + qnorm(p =1-alpha/2)*linear.pred$se
 
@@ -240,14 +228,15 @@ CI.pi.lower <- exp(CI.lin.pred.lower) / (1 +exp(CI.lin.pred.lower))
 CI.pi.upper <- exp(CI.lin.pred.upper) / (1 +exp(CI.lin.pred.upper))
 list(lower = CI.pi.lower, upper = CI.pi.upper)}
 
-curve(expr=ci.pi(newdata=data.frame(Temp=x),mod.fit.obj = mod.fit2, alpha = 0.05)$lower, col = "blue", lty="dotdash",add=TRUE,xlim=c(31,81))
+curve(expr=ci.pi(newdata=data.frame(Temp=x),mod.fit.obj = mod.fit2, alpha = 0.05)$lower, 
+      col = "blue", lty="dotdash",add=TRUE,xlim=c(31,81))
 
-curve(expr=ci.pi(newdata=data.frame(Temp=x),mod.fit.obj = mod.fit2, alpha = 0.05)$upper, col = "blue", lty="dotdash",add=TRUE,xlim=c(31,81))
+curve(expr=ci.pi(newdata=data.frame(Temp=x),mod.fit.obj = mod.fit2, alpha = 0.05)$upper, 
+      col = "blue", lty="dotdash",add=TRUE,xlim=c(31,81))
 ```
+*Bands are wider due to change in probability across temperature gradient. There is a much steeper drop in temperature below and above 65 (similar to complete separation problem). Less of a drastic change in higher temperatures due to two "middle" values between 70 and 75.*  
 
-*Bands are wider due to change in probability across temperature gradient. There is a much steeper drop in temperature below and above 65 (similar to complete separation problem). Less of a drastic change in higher temperatures due to two "middle" values between 70 and 75. We also have fewer observations for the low temperature range.*
-
-#### 5 (d) The temperature was 31 at launch for the Challenger in 1986. Estimate the probability of an O-ring failure using this temperature, and compute a corresponding confidence interval.  Discuss what assumptions need to be made in order to apply the inference procedures.
+#### 5 (d) The temperature was 31 at launch for the Challenger in 1986. Estimate the probability of an O-ring failure using this temperature, and compute a corresponding confidence interval.  Discuss what assumptions need to be made in order to apply the inference procedures.  
 
 ```{r}
 alpha=0.05
@@ -258,20 +247,23 @@ linear.pred=predict(object = mod.fit2, newdata = predict.data, #linear part of m
 
 pi.hat = exp(linear.pred$fit)/(1+exp(linear.pred$fit)) #estimated probability
 
-CI.lin.pred = linear.pred$fit + qnorm(p = c(alpha/2, 1-alpha/2))*linear.pred$se #confidence interval before exponentiation
+CI.lin.pred = linear.pred$fit + qnorm(p = c(alpha/2, 1-alpha/2))*linear.pred$se 
+#confidence interval before exponentiation
 
 CI.pi = exp(CI.lin.pred)/(1+exp(CI.lin.pred)) #actual interval
 ```
 
-The estimated probability of o-ring failure at 31 F is `r round(pi.hat,4)` and the corresponding confidence interval is `r round(CI.pi,4)`. 
+The estimated probability of o-ring failure at 31 F is `r round(pi.hat,4)` and the corresponding confidence interval is `r round(CI.pi,4)`.  
 
-#### 5 (e) Rather than using Wald or profile LR intervals for the probability of failure, Dalalet al. (1989) use a parametric bootstrap to compute intervals. Their process was to (1) simulate a large number of data sets (n= 23 for each) from the estimated model of $$logit(\pi)=\beta_{0}+\beta_{1}*Temp$$;(2) estimate new models for each data set,say $$logit(\pi)=Beta_{0}+Beta_{1}*Temp$$;and (3) compute at a specific temperature of interest. The authors used the 0.05 and 0.95 observed quantiles from the simulated distribution as their 90% confidence interval limits. Using the parametric bootstrap, compute 90% confidence intervals separately at temperatures of 31 and 72.27
+#### 5 (e) Rather than using Wald or profile LR intervals for the probability of failure, Dalalet al. (1989) use a parametric bootstrap to compute intervals. Their process was to (1) simulate a large number of data sets (n= 23 for each) from the estimated model of $$logit(\pi)=\beta_{0}+\beta_{1}*Temp$$;(2)estimate new models for each dataset,say $$logit(\pi)=Beta_{0}+Beta_{1}*Temp$$;and (3)compute at a specific temperature of interest. The authors used the 0.05 and 0.95 observed quantiles from the simulated distribution as their 90% confidence interval limits. Using the parametric bootstrap, compute 90% confidence intervals separately at temperatures of 31 and 72.27  
 
 ```{r}
-library(boot) # Necessary because we're calculating a parametric bootstrap interval and this library is referenced in the book.
+library(boot) 
+# Necessary because we're calculating a parametric bootstrap 
+# interval and this library is referenced in the book.
 
 # Get probs from mod.fit2
-predict.data <- data.frame(Temp=31:81) 
+predict.data <- data.frame(Temp=31:81)
 linear.pred=predict(object = mod.fit2, newdata = predict.data, #linear part of model
                     type = "link", se = TRUE)
 pis = exp(linear.pred$fit)/(1+exp(linear.pred$fit))
@@ -298,53 +290,15 @@ gensamples <- function(data, pis){
   return(x)
 }
 
-results <- boot(data=df[,c("Temp", "O.ring")], statistic=pi.hat.star, sim="parametric", R=1000, ran.gen=gensamples, mle=pis)
+results <- boot(data=df[,c("Temp", "O.ring")], statistic=pi.hat.star, 
+        sim="parametric", R=1000, ran.gen=gensamples, mle=pis)
 boot.ci(results, conf = 0.90, type="bca")
 ```
-
-```{r}
-
-out <- glm(formula=O.ring~Temp, family = binomial(link = logit), data=df) #fit on observed
-summary(out)
-
-df$pred <- predict(out,data=df$Temp, type = "response") #estimated probabilities from observation-fitted model
-
-n <- length(df$Temp) #sample size of 23 , like original data
-nboot <- 1000 #number of bootstrap samples
-pi.star <- double(nboot) #array to store probability estimates
-
-
-
-for (i in 1:nboot) { #for each bootstrap sample
-    samp_df<-df[sample(nrow(df),size=n,replace=TRUE),]
-    samp_df$O.star <- rbinom(n, 1, samp_df$pred) #generate outcome for each temperature with the estimated probability
-    out.star <- glm(O.star ~Temp, family = binomial(link = logit),data=samp_df) #fit new model on these generated outcomes
-    test=data.frame(Temp<-72.27) #test temperature
-    pi.star[i] <- predict(object=out.star,newdata=test, type = "response") #predict probability of at least one O-ring failure for test temp.
-    
-}
-mean(pi.star) #bootstrapped estimate of probability
-quantile(pi.star,c(.05,.95)) #90% confidence interval from bootstrap simulation
-
-for (i in 1:nboot) { #for each bootstrap sample
-    samp_df<-df[sample(nrow(df),size=n,replace=TRUE),]
-    samp_df$O.star <- rbinom(n, 1, samp_df$pred) #generate outcome for each temperature with the estimated probability
-    out.star <- glm(O.star ~Temp, family = binomial(link = logit),data=samp_df) #fit new model on these generated outcomes
-    test=data.frame(Temp<-31) #test temperature
-    pi.star[i] <- predict(object=out.star,newdata=test, type = "response") #predict probability of at least one O-ring failure for test temp.
-    
-}
-mean(pi.star) #bootstrapped estimate of probability
-quantile(pi.star,c(.05,.95)) #90% confidence interval from bootstrap simulation
-
-
-```
-
 
 #### 5 (f) Determine if a quadratic term is needed in the model for the temperature.
 
 ```{r}
-mod.fit.Ha<-glm(formula=O.ring~Temp,data=df,family=binomial(link = logit))
+mod.fit.Ha<-glm(formula=O.ring~Temp+I(Temp^2),data=df,family=binomial(link = logit))
 anova(mod.fit2,mod.fit.Ha,test="Chisq")
 ```
 
@@ -359,8 +313,7 @@ anova(mod.fit2,mod.fit.Ha,test="Chisq")
 #### b. With the same set of explanatory variables in your final model, estimate a linear regression model. Explain the model results; conduct model diagnostic; and assess the validity of the model assumptions. Would you use the linear regression model or binary logistic regression in this case. Please explain.
 
 ```{r}
-
-mod.lm <- lm(O.ring ~ Temp+P200, data = df)
+mod.lm <- lm(as.numeric(O.ring) ~ Pressure + Temp, data = df)
 summary(mod.lm)
 ```
 The estimated linear regression model is
@@ -368,83 +321,41 @@ The estimated linear regression model is
 $$
 \hat{\pi} = 2.658765 + 0.001962\mbox{Pressure} - 0.038136\mbox{Temp}
 $$
-#The assumptions we want to test/be on the look out for:
-1)The model is linear in it's parameters.
-2)The conditional mean of the errors is 0. 
-3)There is a random sampling of observations. *don't have choice here*
-4) There is no multi-collinearity/perfect collinearity amongst explanatory variables. *passed in EDA*
-5)The errors have common constant variance (homoscedasticity).
-6)The errors are independent of one another.
-7)The errors are normally distributed. *not required for BLUE but do need for reliable inference*
-
-We note since are observations are less than 30, we can't make asymptotic arguments for our parameter estimates. Moreover, for some of our tests, such as Shapiro, we will likely fail to reject due to lack of data and so we must test these assumptions from multiple angles (visualizations, etc.).
-
-7)The errors are normally distributed.
-```{r}
-hist(mod.lm$residuals)
-qqnorm(mod.lm$residuals)
-qqline(mod.lm$residuals)
-shapiro.test(mod.lm$residuals)
-coeftest(mod.lm, vcov=vcovHC(mod.lm))
-```
-We see both from the histogram and the qq-plot that the distribution deviates from normality at the tail ends. We particularly see a positive skew present in our distribution. With a p-value 0.009 for the Shapiro-Wilk test we can safely reject the null hypothesis that the residuals follow a normal distribution. Hence, we can't gaurantee precision on our standard errors. We can switch to robust standard errors as done in the last line.
-
-
-
-```{r}
-summary(mod.lm$fitted.values)
-```
-We see that the predictions are outside of the range for a probability. This is concerning as we want to assess risk of O-ring failure and probability would be well-suited for that task. Having a range that doesn't correspond gives us little sense of what's going on as the scale becomes relatively arbitrary.
-
-```{r}
-scatterplot(mod.lm$residuals,as.numeric(df$O.ring))
-
-```
-We already knew from the binary nature of the outcome that a continuous seemed innapropriate, however the line of residuals vs the O.ring failure outcome does manage to somewhat separate distinct cases (we see 4 of the observations are on the "wrong" side of the decision boundary). A linear relation seems roughly justified.
-
-
-
 
 ```{r}
 par(mfrow=c(2,2))
 plot(mod.lm)
 ```
-We 
 
-5)The errors have common constant variance (homoscedasticity).
 ```{r}
-
-ncvTest(mod.lm)
-library(lmtest)
-bptest(mod.lm)
-
-```
-
-Both the traditional Breusch-Pagan test and the Studentized Breusch-Pagan test fail to reject the null hypothesis that the variance is homoskedastic. However the lack of even band in residuals vs fitted plot and curvature in scale-location plots suggests violation of this assumption though difficult to say due to sparsity of data. As we noted, at low sample size, these tests might have also lack the power.
-
-2)The conditional mean of the errors is 0.
-6)The errors are independent of one another.
-```{r}
-durbinWatsonTest(mod.lm)
 par(mfrow=c(1,1))
 residualPlots(mod.lm)
 ```
-By the Durbin-Watson test, we fail to reject the null that the residuals are uncorrelated with one another. From the cross-sectional nature of the launch events, we can also feel more comfortable about this result. We also are able to reject the idea that the residuals correlate with our explanatory variables as well (slight but negligble curvature), giving some plausibility to 0 conditional mean of the errors.
-
-
-
-
-
-
 
 ```{r}
-
+scatterplot(as.numeric(df$O.ring), mod.lm$fitted.values)
+```
+```{r}
+summary(mod.lm$fitted.values)
+```
+```{r}
+hist(mod.lm$residuals)
+qqnorm(mod.lm$residuals)
+qqline(mod.lm$residuals)
+scatterplot(mod.lm$fitted.values, mod.lm$residuals,
+            smoother = loessLine, cex = 0.5, pch = 19,
+            smoother.args = list(lty = 1, lwd = 5), 
+            main = "Residuals vs Fitted Values", 
+            xlab = "Fitted Values", ylab ="Residuals")
+```
+```{r}
+shapiro.test(mod.lm$residuals)
+ncvTest(mod.lm)
+library(lmtest)
+bptest(mod.lm)
+durbinWatsonTest(mod.lm)
 library(gvlma)
 gv.mod.lm <- gvlma(mod.lm)
 summary(gv.mod.lm) 
 ```
-From the gvlma we are added some assurance in that Global Stat- fail to reject relationship between X and Y are roughly linear, 4.failed to reject the Link function was appropriate , 5. failed to reject variance of the residuals seem constant. From Skewness, we see a potential need for variable transformation but we need to keep the model comparable to the logistic version.
 
-After review of both models, we would opt for a logistic regression for several reasons. First, the output is more desirable in that we can compare odds of failures as well as compute actual probabilities of failure whereas the linear regression goes out of range. Moreover, the linear regression's questionability in terms of inference (failed normality of errors), likely keeps us restricted to the observed data in terms of predictions.
-
-##conclusion
