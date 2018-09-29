@@ -377,7 +377,7 @@ ci.31 <- quantile(pi.star,c(.05,.95)) #90% confidence interval from bootstrap si
 ```
 The 90% confidence interval was calculated using temperatures of 31$^\circ$F and 72$^\circ$F via bootstrap simulation. At each tempera- ture, the confidence interval is determined by choosing the simulated values that correspond to the 5th percentile and 95th percentile.
 
-At 31$^\circ$F, the 90% confidence interval of $$\hat{\pi}\ast$$ from the simluated model is `r ci.31` with an estimate of `r pi.star.31` . At 72$^\circ$F, the estimate is `r pi.star.72` and the 90% confidence interval of $$\hat{\pi}\ast$$ from the simluated model is `r ci.72`.
+At 31$^\circ$F, the 90% confidence interval of $$\hat{\pi}\ast$$ from the simluated model is `r ci.31` with an estimate of `r pi.star.31` . At 72$^\circ$F, the estimate is `r pi.star.72` and the 90% confidence interval of $$\hat{\pi}\ast$$ from the simluated model is `r ci.72`. We see a wide interval for 31$^\circ$F, likely due to the lack of data points at the lower temperatures. For 72$^\circ$F, the confidence interval is narrower in reflection to the data we have for higher temperatures.
 
 
 
