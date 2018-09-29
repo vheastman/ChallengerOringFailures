@@ -377,9 +377,9 @@ ci.31 <- quantile(pi.star,c(.05,.95)) #90% confidence interval from bootstrap si
 ```
 The 90% confidence interval was calculated using temperatures of 31$^\circ$F and 72$^\circ$F via bootstrap simulation. At each tempera- ture, the confidence interval is determined by choosing the simulated values that correspond to the 5th percentile and 95th percentile.
 
-At 31$^\circ$F, the 90% confidence interval of $$\hat{\pi}\ast$$ from the simluated model is `r ci.31`. At 72$^\circ$F, the 90% confidence interval of $$\hat{\pi}\ast$$ from the simluated model is `r ci.72`.
+At 31$^\circ$F, the 90% confidence interval of $$\hat{\pi}\ast$$ from the simluated model is `r ci.31` with an estimate of `r pi.star.31` . At 72$^\circ$F, the estimate is `r pi.star.72` and the 90% confidence interval of $$\hat{\pi}\ast$$ from the simluated model is `r ci.72`.
 
-The bootstrapped 90% confidence interval for 31F is `r round(ci.31,4)` and for 72.27F is `r round(ci.72)`. 
+
 
 #### 5 (f) Determine if a quadratic term is needed in the model for the temperature.
 As one last step to finalizing the model specification, we check if higher orders of temperature, particularly quadratic, contribute to the failure of O-rings.
