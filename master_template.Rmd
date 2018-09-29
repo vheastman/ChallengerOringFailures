@@ -268,7 +268,7 @@ xlim = c(30, 90))
 legend(60, 5, c("Binomial Model", "Binary Model"), lwd = c(1, 1), col = c(2, 4))
 ```
 
-Although not a surefire validation, we are further assured in supporting the claim that the O-ring failures can be treated independently and we can use the binomial model. This validation check is on top of the analysis that Dalal et. all use to support using the binomial model.
+Although not a surefire validation, we are further assured in supporting the claim that the O-ring failures can be treated independently and we can use the binomial model. This validation check is on top of the subsequent analysis that Dalal et. all use to support using the binomial model.
 
 #### 5 (b) Construct two plots: (1)$\pi$ vs. Temp and (2) Expected number of failures vs. Temp. Use a temperature range of 31 to 81 on the x-axis even though the minimum temperature in the data set was 53.
 
@@ -331,7 +331,7 @@ CI.pi=ci.pi(newdata = predict.data, mod.fit.obj = mod_binomial.fit_temp, alpha =
 
 The estimated probability of o-ring failure at 31 F is `r round(pi.hat,4)` with and `r round(number_fail,4)` of the 6 O-rings failing. The corresponding 95% Wald confidence interval is `r round(CI.pi,4)`. 
 
-#### 5 (e) 
+#### 5 (e) Bootstrap Estimates
 
 ```{r}
 # First, fit on observed
@@ -373,13 +373,18 @@ for (i in 1:nboot) { #for each bootstrap sample
 pi.star.31 <- mean(pi.star) #bootstrapped estimate of probability
 ci.31 <- quantile(pi.star,c(.05,.95)) #90% confidence interval from bootstrap simulation
 ```
+The 90% confidence interval was calculated using temperatures of 31$^\circ$F and 72$^\circ$F. At each tempera- ture, the confidence interval is determined by ordering the points and then choosing the values that correspond to the 5th percentile and 95th percentile.
+
+At 31$^\circ$F, the 90% confidence interval of $$\hat{\pi}\ast$$ from the simluated model is `r ci.31`. At 72$^\circ$F, the 90% confidence interval of $$\hat{\pi}\ast$$ from the simluated model is `r ci.72`.
+
 The bootstrapped 90% confidence interval for 31F is `r round(ci.31,4)` and for 72.27F is `r round(ci.72)`. 
 
 #### 5 (f) Determine if a quadratic term is needed in the model for the temperature.
+As one last step to finalizing the model specification, we check if higher orders of temperature, particularly quadratic, contribute to the failure of O-rings.
 
 ```{r}
-mod.fit.Ha<-glm(formula=O.ring~Temp,data=df,family=binomial(link = logit))
-anova(mod.fit2,mod.fit.Ha,test="Chisq")
+mod.fit.Ha<-glm(formula=O.ring.total/Number~Temp+I(Temp^2),data=df,family=binomial(link = logit),weights = Number)
+anova(mod_binomial.fit_temp,mod.fit.Ha,test="Chisq")
 ```
 
 The Quadratic term fails to produce significant effect in change in residual deviance and so we fail to reject that the coefficient is actually 0 for the quadratic term.
