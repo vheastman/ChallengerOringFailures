@@ -16,6 +16,8 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, fig.width = 8, fig.height = 
 
 Following the Challenger Space Shuttle's destruction in 1986, a commission appointed by President Reagan determined the cause to be a gas leak through a field joint. This problem was well-known to NASA and is frequently referred to as an o-ring failure. In 1989, Dalal et al. collected data from previous space shuttle launches to study the probability of an o-ring failure under conditions similar to those that occured during the Challenger launch in 1986. In this analysis, we used their dataset to echo the purpose of their study and attempt to determine the effect of key explanatory variables (temperature and pressure) on o-ring failure. In the end we specified a logistic regression model on temperature with the following formula:
 
+$$\mbox{logit}(\hat{\pi}) = \frac{\hat{\pi}}{{1-\hat{\pi}}}= 5.08498 - 0.11560\mbox{Temp}$$
+
 The probability of an O-ring failure at temperature 31$^\circ$, the temperature when Challenger was launched, is 0.8178 with  bootstrapped 90% confidence interval of about (0.113,0.993) using profile LR intervals, which would correspond to about five out of the six primary field O-rings failing.
 
 
