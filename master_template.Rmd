@@ -16,7 +16,7 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, fig.width = 8, fig.height = 
 
 Following the Challenger Space Shuttle's destruction in 1986, a commission appointed by President Reagan determined the cause to be a gas leak through a field joint. This problem was well-known to NASA and is frequently referred to as an o-ring failure. In 1989, Dalal et al. collected data from previous space shuttle launches to study the probability of an o-ring failure under conditions similar to those that occured during the Challenger launch in 1986. In this analysis, we used their dataset to echo the purpose of their study and attempt to determine the effect of key explanatory variables (temperature and pressure) on o-ring failure. In the end we specified a logistic regression model on temperature with the following formula:
 
-The probability of an O-ring failure at temperature 31◦, the temperature when Challenger was launched, is 0.8178 with a 95% confidence interval of (0.1596, 0.9907) using profile LR intervals, which would correspond to about five out of the six primary field O-rings failing.
+The probability of an O-ring failure at temperature 31$^\circ$, the temperature when Challenger was launched, is 0.8178 with  bootstrapped 90% confidence interval of about (0.113,0.993) using profile LR intervals, which would correspond to about five out of the six primary field O-rings failing.
 
 
 We first begin our analysis with a thorough exploratory data analysis in order to understand the variables we are working with. Then, we estimate a series of models that we use to predict o-ring failure. 
@@ -225,7 +225,7 @@ In terms of statistical significance, pressure wasn't found to be statistically 
 
 ## III.II Modeling O-ring Failures with Temperature 
 
-### Question 5
+### Question 5 (book)
 
 Next we estimate the model with the only one regressor found significant: temperature.
 
@@ -389,7 +389,9 @@ anova(mod_binomial.fit_temp,mod.fit.Ha,test="Chisq")
 
 The Quadratic term fails to produce significant effect in change in residual deviance and so we fail to reject that the coefficient is actually 0 for the quadratic term. Hence we do not include it in our final logistic model.
 
-### IV. Estimate Linear Regression Model and Diagnose/Interpret (3b)
+##IV.Model Selection: Fitting and Assessing a  Linear Regression Model
+
+### Estimate Linear Regression Model and Diagnose/Interpret (3b)
 
 #### 3 (a). Interpret the main result of your final model in terms of both odds and probability of failure
 
@@ -478,7 +480,7 @@ From the gvlma we are added some assurance in that Global Stat- fail to reject r
 After review of both models, we would opt for a logistic regression for several reasons. The linear regression model estimates that the percentage of O-ring failures will decrease by 0.007923 with every 1$^\circ$F increase in temperature. That means, the probability of O-rings failure will be less than 0 when the temperature is roughly 78$^\circ$F and above. This does not correspond with the physical picture. Also, the linear regression assumes a linear relationship between the probability of O-rings failure and the temperature which is not realistic. First, the output is more desirable in that we can compare odds of failures as well as compute actual probabilities of failure whereas the linear regression goes out of range. Moreover, the linear regression's questionability in terms of inference (failed normality of errors), likely keeps us restricted to the observed data in terms of predictions.
 
 
-#### V. Interpreting the Results of the Final Model (3a)
+## V. Interpreting the Results of the Final Model (3a)
 Having explored the data, tested model specifications with lrt's as well as comparing to other possibilities such as the linear model, our final model is
 
 $$
@@ -497,6 +499,12 @@ rev(exp(-10*beta.ci))
 ```
 We look at the change in the odds of an O-ring failure when temperature decreases. From our calculations above, we see that for a 10$^\circ$F decrease in temperature, the odds of an O-ring failure is about 3.18 times as high as the initial odds. With 95% confidence, the odds of an O-ring failure changes by an amount between 1.277 to 8.35 times for every 10$^\circ$F decrease in temperature.
 
-#### VI. Conclusion
+##VI. Conclusion
 
-In conclusion, we found that 
+We analyzed 23 pre-accident launches of the space shuttle and found that the probability of an O-ring failure at 31$^\circ$F is rather high at about 0.8178 with a bootstrapped 90% confidence interval of about (0.113,0.993). This is critical as this is the same temperature at which the Challenger failed and the reason for this investigation.
+
+We made assumptions on independence of O-rings failing independently from one another and a combination of comparing to a binary failure model and the binomial model along with some deference to Dalal's analysis assured us the models are close enough to overcome potential problems. Since we only had 23 observations and the range of temperatures from 53$^\circ$F to 81$^\circ$F was relatively far away  from the Challenger launch and limited, we obtained a rather wide confidence interval for probability of failure. For future analysis, we hope to analayze a wider range of conditions for failure.
+
+The pressure variable was unable to evidentially produce a statistically significant effect to be included in our final model, even when attention was binarized to the 200 psi level. Again, collections of more observations may change this conclusion in the future. Finally, we find that a logistic regression model performs better than a linear regression model and provides a better rational explanation of the O-ring failures.
+
+
