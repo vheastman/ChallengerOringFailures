@@ -14,7 +14,10 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, fig.width = 8, fig.height = 
 
 ## I. Introduction
 
-Following the Challenger Space Shuttle's destruction in 1986, a commission appointed by President Reagan determined the cause to be a gas leak through a field joint. This problem was well-known to NASA and is frequently referred to as an o-ring failure. In 1989, Dalal et al. collected data from previous space shuttle launches to study the probability of an o-ring failure under conditions similar to those that occured during the Challenger launch in 1986. In this analysis, we will use their dataset to mimic their study and attempt to determine the effect of key explanatory variables (temperature and pressure) on o-ring failure. In the end we specified a logistic regression model on temperature with the following formula:
+Following the Challenger Space Shuttle's destruction in 1986, a commission appointed by President Reagan determined the cause to be a gas leak through a field joint. This problem was well-known to NASA and is frequently referred to as an o-ring failure. In 1989, Dalal et al. collected data from previous space shuttle launches to study the probability of an o-ring failure under conditions similar to those that occured during the Challenger launch in 1986. In this analysis, we used their dataset to echo the purpose of their study and attempt to determine the effect of key explanatory variables (temperature and pressure) on o-ring failure. In the end we specified a logistic regression model on temperature with the following formula:
+
+The probability of an O-ring failure at temperature 31◦, the temperature when Challenger was launched, is 0.8178 with a 95% confidence interval of (0.1596, 0.9907) using profile LR intervals, which would correspond to about five out of the six primary field O-rings failing.
+
 
 We first begin our analysis with a thorough exploratory data analysis in order to understand the variables we are working with. Then, we estimate a series of models that we use to predict o-ring failure. 
 
@@ -24,14 +27,14 @@ suppressPackageStartupMessages(library(dplyr))
 suppressPackageStartupMessages(library(Hmisc))
 suppressPackageStartupMessages(library(car))
 
-#setwd("/Users/gurditchahal/w271_lab1")
-setwd("/home/victoriaeastman/berkeley/w271/w271_lab1")
+setwd("/Users/gurditchahal/w271_lab1")
+#setwd("/home/victoriaeastman/berkeley/w271/w271_lab1")
 df <- read.csv("challenger.csv")
 ```
 
 ## II. EDA
 
-### II (a) Univariate Analysis
+### II (a) Data Summary and Overview
 
 ```{r}
 # Start with basic looks at the data
@@ -39,21 +42,14 @@ glimpse(df)
 describe(df[,c("Temp", "Pressure", "O.ring")])
 ```
 
-A glimpse of the data shows we have 5 variables in our dataset:
+A glimpse of the data shows we have 23 observations and 5 variables in our dataset. There are also no missing values. Again, we are primarily interested in the effects of temperature and pressure on o-ring failure. The dependent variable : the percentage of O-ring failures is *O.ring/Number* where *1) O.ring* is the number of primary field O-ring failures and *2)Number* is the total number of primary field O-rings (six total, three for each for two booster rockets). Our two potential explanatory variables are *1)Temp* is temperature at launch in degrees Fahrenheit and *2)Pressure* is combustion pressure (psi).
 
-  - Flight: Flight number
-  - Temp: Temperature in F at launch
-  - Pressure: combustion pressure in psi at launch
-  - O.ring: number of primary field o-ring failures
-  - Number: total number of primary field o-rings
-  
-We are primarily interested in the effects of temperature and pressure on o-ring failure. Seeing as the total number of primary field o-rings does not change for our observations and we have no particular reason to see it change, we discard this variable due to lack of immediate use/differentiating behavior between failed and successful launches. Similarly, we discard flight number due to lack of any immediate use.
-
-We can see that the `O.ring` variable has 3 distinct values: 0, 1, and 2. We are going to be nuanced in our analysis and say we want to find the conditions that lead to *at least one* o-ring failure. Therefore, we will recategorize those flights with 2 failures as having 1 failure for the purposes of this study. 
+We can see that the `O.ring` variable has 3 distinct values: 0, 1, and 2 but only 2 observations for the value 2. To deal with this concern in representation we want to consider formulating our problem in terms of having  *at least one* o-ring failure. Therefore, for one version of our model we will binarize our outcomes and transform those flights with 2 failures as having 1 failure for the purposes of this study.We will later compare this to the binomial model when finalzing our model selection. 
 
 ```{r}
-# We don't want to eliminate raw data
+# Keep raw counts as new variable of total
 df$O.ring.total = df$O.ring
+# Binary version
 df$O.ring[df$O.ring > 1] = 1
 ```
 
@@ -64,38 +60,63 @@ In addition, we see that the dataset contains 23 data points from other shuttle 
 cor(df[,c("Temp", "Pressure", "O.ring")])
 ```
 
-We take a quick look at correlation between variables to assess wether there might be collinearity as well as a rough gauge of predictive power between these variables prior to any transformations. We see that there is no perfect collinearity. We see a moderate negative correlation between O.ring failures and temperature and a weakly positive correlation between pressure and failures. We see negligible positive correlation between temperature and pressure and thus don't worry about colliniearity.
+We take a quick look at correlation between variables to assess wether there might be collinearity as well as a rough gauge of predictive power between these variables prior to any transformations. We see that there is no perfect collinearity. We see a moderate negative correlation between O.ring failures and temperature and a weakly positive correlation between pressure and failures- leading us to our first consideration of these variables as the explanatory variables in our model. We see negligible positive correlation between temperature and pressure and thus don't worry about colliniearity.
 
+
+### II (b) Temperature
 ```{r}
 #What does the distribution of temperatures look like?
 ggplot(df, aes(x = Temp)) +
-  geom_histogram(aes(y = ..density..), binwidth = 0.2, fill="#0072B2", colour="black") +
-  ggtitle("Histogram of Temperature") + 
+  geom_histogram(aes(y = ..density..), binwidth = 1, fill="#0072B2", colour="black") +
+  ggtitle("Histogram of Temperature at Launches") + 
   theme(plot.title = element_text(lineheight=1, face="bold"))
 ```
 
-The distribution of the temperature explanatory variable looks to faintly resemble a normal distribution with a very slight negative skew. Due to this, we see no compelling reason to take a log transformation of the variable at this stage. The mode of temperatures is 70 and the range is `r range(df$Temp)`. 
+The distribution of the temperature explanatory variable has a slight negative skew. The mode of temperatures is 70 and the range is `r range(df$Temp)`. This is noteworthy because the temperature when Challenger was launched is 31◦F and there are no observations of how many O-ring failures occur at that temperature. Moreover,there are fewer observations at lower temperatures as we look to the left of 67 (everything below has no more than one count) and is worth noting in terms of precision of prediction concerns once we reach the modeling stage.
 
-### II (b) Bivariate Analysis
 
 ```{r, out.height="4in", out.width="0.48\\textwidth"}
-#group each explanatory variable by O.ring failure
-for (i in 2:3){
-  print(ggplot(df, aes(factor(O.ring), df[,i])) +
-          geom_boxplot(aes(fill = factor(O.ring))) + 
+#group temperature variable by O.ring failure
+  print(ggplot(df, aes(factor(O.ring.total), Temp)) +
+          geom_boxplot(aes(fill = factor(O.ring.total))) + 
           geom_jitter() +
-          ggtitle(paste0(colnames(df)[i], " by O.ring")) + ylab(colnames(df)[i]) +
+          ggtitle("Temperature by Number of O-ring Failures") + ylab('Temperature(F)') 
+          + xlab('Number of O-ring Failures')+
           theme(plot.title = element_text(lineheight=1, face="bold")))
-}
+
 ```
 
-The boxplot above of temperature grouped by o-ring failure shows the average temperature when o-rings failed was lower than when they did not. Also, the overlay scatterplot shows the mismatch of data: there's much more data for non-failures than failures. The second boxplot for pressure shows that all but 2 o-ring failures occured under high pressure conditions. Also, for non-failures, the mean and 75th percentile are overlapping, indicating that the data is skewed. 
+The boxplot above of temperature grouped by o-ring failure shows the average temperature when o-rings failed was lower than when they did not. What's interesting is we can see from the chart that when the temperature is below 65, at least one O-ring fails. Therefore, it lends some credibility to a belief that O-rings are more likely to fail when temperature is lower. Another interesting observation that jumps out is that there is one observation of 2 O-ring failures at 75 which goes against the grain of the general observation between temperature and failures. This outcome could be suspect to having some influence by our other explanatory variable of *Pressure*.
 
 ```{r}
-plot(O.ring~Temp,data=df, main="O-ring Failures vs Temperature")
+plot(O.ring.total~Temp,data=df, main="O-ring Failures vs Temperature")
 ```
 
-Directly looking at the distribution of o-ring failures to temperature, we can determine our data is not completely separated (hence traditional logistic regression is still a valid possibility for model selection). 
+Directly looking at the distribution of o-ring failures to temperature, we can determine our data is not completely separated(hence traditional logistic regression is still a valid possibility for model selection). 
+
+### II (c) Pressure
+
+```{r}
+ggplot(df, aes(x = Pressure)) + geom_histogram(aes(y = ..density..),
+binwidth = 5, fill = "#0072B2", colour = "black") + ggtitle("Histogram of the Pressure at Launches")+ theme(plot.title = element_text(lineheight = 1, face = "bold")) +
+theme_bw() + labs(x = "Pressure", y = "Density")
+ 
+```
+```{r}
+table(df$Pressure)
+```
+
+
+```{r}
+ print(ggplot(df, aes(factor(O.ring.total), df[,i])) +
+          geom_boxplot(aes(fill = factor(O.ring.total))) + 
+          geom_jitter() +
+          ggtitle("Pressure by Number of O-ring Failures")) + ylab('Pressure(psi)') +xlab('Number of O-ring Failures') +
+          theme(plot.title = element_text(lineheight=1, face="bold"))
+```
+
+
+
 
 ```{r}
 #how much does temperature vary by each pressure stage
