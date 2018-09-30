@@ -68,7 +68,7 @@ We take a quick look at correlation between variables to assess wether there mig
 
 
 ### II (b) Temperature
-```{r}
+```{r,out.height="6in", out.width="0.7\\textwidth"}
 #What does the distribution of temperatures look like?
 ggplot(df, aes(x = Temp)) +
   geom_histogram(aes(y = ..density..), binwidth = 1, fill="#0072B2", colour="black") +
@@ -76,10 +76,10 @@ ggplot(df, aes(x = Temp)) +
   theme(plot.title = element_text(lineheight=1, face="bold"))
 ```
 
-The distribution of the temperature explanatory variable has a slight negative skew. The mode of temperatures is 70 and the range is `r range(df$Temp)`. This is noteworthy because the temperature when Challenger was launched is 31 and there are no observations of how many O-ring failures occur at that temperature. Moreover,there are fewer observations at lower temperatures as we look to the left of 67 (everything below has no more than one count) and is worth noting in terms of precision of prediction concerns once we reach the modeling stage.
+The distribution of the temperature explanatory variable has a slight negative skew. The mode of temperatures is 70$^\circ$F and the range is `r range(df$Temp)`. This is noteworthy because the temperature when Challenger was launched is 31$^\circ$F and there are no observations of how many O-ring failures occur at that temperature. Moreover,there are fewer observations at lower temperatures as we look to the left of 67$^\circ$F (everything below has no more than one count) and is worth noting in terms of precision of prediction concerns once we reach the modeling stage.
 
 
-```{r, out.height="4in", out.width="0.48\\textwidth", fig.align='center'}
+```{r, fig.align='center'}
 #group temperature variable by O.ring failure
   print(ggplot(df, aes(factor(O.ring.total), Temp)) +
           geom_boxplot(aes(fill = factor(O.ring.total))) + 
@@ -90,17 +90,11 @@ The distribution of the temperature explanatory variable has a slight negative s
 
 ```
 
-The boxplot above of temperature grouped by o-ring failure shows the average temperature when o-rings failed was lower than when they did not. What's interesting is we can see from the chart that when the temperature is below 65, at least one O-ring fails. Therefore, it lends some credibility to a belief that O-rings are more likely to fail when temperature is lower. Another interesting observation that jumps out is that there is one observation of 2 O-ring failures at 75 which goes against the grain of the general observation between temperature and failures. This outcome could be suspect to having some influence by our other explanatory variable of *Pressure*.
-
-```{r}
-plot(O.ring.total~Temp,data=df, main="O-ring Failures vs Temperature")
-```
-
-Directly looking at the distribution of o-ring failures to temperature, we can determine our data is not completely separated(hence traditional logistic regression is still a valid possibility for model selection). 
+The boxplot above of temperature grouped by o-ring failure shows the average temperature when O-rings failed was lower than when they did not. What's interesting is we can see from the chart that when the temperature is below 65$^\circ$F, at least one O-ring fails. Therefore, it lends some credibility to a belief that O-rings are more likely to fail when temperature is lower. Another interesting observation that jumps out is that there is one observation of 2 O-ring failures at 75$^\circ$F which goes against the grain of the general observation between temperature and failures. This outcome could be suspect to having some influence by our other explanatory variable of *Pressure*.
 
 ### II (c) Pressure
 
-```{r}
+```{r,out.height="6in", out.width="0.7\\textwidth"}
 ggplot(df, aes(x = Pressure)) + geom_histogram(aes(y = ..density..),
 binwidth = 5, fill = "#0072B2", colour = "black") + 
         ggtitle("Histogram of the Pressure at Launches")+ 
@@ -114,7 +108,7 @@ table(df$Pressure)
 As noted in the table summary, although pressure in psi is usually considered continuous, the manner in which it's been observed at these three distinct values suggests a natural discretization at these key values. The test pressure from the observations are 50psi, 100psi and 200psi. Moreover, we notice only two observations at 100. Depending on where the seemingly abnormal failure point at higher temperature is with relation to pressure as well as the relationship of pressure to the failures, we could consider a further discretiziation like binarization (e.g. at 50 =1 >50=0).
 
 
-```{r, out.height="4in", out.width="0.48\\textwidth", fig.align='center'}
+```{r, fig.align='center'}
 print(ggplot(df, aes(factor(O.ring.total), Pressure)) +
           geom_boxplot(aes(fill = factor(O.ring.total))) + 
           geom_jitter() +
@@ -128,7 +122,7 @@ From the Pressure by Number of O-ring Failures chart, there are no O-ring failur
 
 ### II (c) Pressure and Temperature
 
-```{r,out.height="4in", out.width="0.48\\textwidth", fig.align='center'}
+```{r, fig.align='center'}
 
 #how much does temperature vary by each pressure stage
 ggplot(df, aes(factor(Pressure), Temp)) +
@@ -141,7 +135,7 @@ ggplot(df, aes(factor(Pressure), Temp)) +
 Above we isolate the data points where pressure is 200 psi. The right boxplot (when pressure is 200 psi) has a much wider temperature range then when pressure is either 50 psi or 100 psi. This could be due to a lack of data points when the pressure is not 200 psi.
 
 
-```{r,out.height="4in", out.width="0.48\\textwidth", fig.align='center'}
+```{r, fig.align='center'}
 #slicing by pressure, any distinct relations between failure and temperature?
 ggplot(df, aes(Temp, Pressure, shape = factor(O.ring.total),
 color = factor(O.ring.total))) + geom_point(size = 2) + 
@@ -266,7 +260,7 @@ summary(binary.fit)
 ```
 The binary model also shows that the Temp variable is statiscally significant and should be included in the model. We look at the binary and binomial models using logistic regression side-by-side to compare.
 
-```{r,out.height="4in", out.width="0.48\\textwidth"}
+```{r}
 plot(df$Temp, df$O.ring.total, ylim = c(0, 6), xlim = c(30,
 90), ylab = "Number of O-rings Failures", xlab = "Temperature",
 main = "Comparison of Models, Binary vs Binomial", panel.first = grid())
@@ -306,7 +300,7 @@ ylab = "Expected number of failures", panel.first = grid())
 
 #### 5 (c) Include the 95% Wald confidence interval bands for $\pi$ on the plot. Why are the bands much wider for lower temperatures than for higher temperatures?
 
-```{r,out.height="4in", out.width="0.48\\textwidth"}
+```{r}
 curve(expr = exp(mod_binomial.fit_temp$coefficients[1] + 
                          mod_binomial.fit_temp$coefficients[2] *x)/
                         (1 + exp(mod_binomial.fit_temp$coefficients[1] + 
@@ -451,39 +445,35 @@ $$
 We note since are observations are less than 30, we can't make asymptotic arguments for our parameter estimates. Moreover, for some of our tests, such as Shapiro, we will likely fail to reject due to lack of data and so we must test these assumptions from multiple angles (visualizations, etc.).
 
   *7. The errors are normally distributed.*
-```{r}
+```{r,out.height="6in", out.width="0.7\\textwidth"}
 # Justification for these packages: used commonly in 203 to asses LR assumptions 
 # and found in Week 2 Analysis in 271
 suppressPackageStartupMessages(library(lmtest)) 
 suppressPackageStartupMessages(library(plm)) 
-suppressPackageStartupMessages(library(gvlma))
 
-hist(mod.lm$residuals)
+
 qqnorm(mod.lm$residuals)
 qqline(mod.lm$residuals)
 shapiro.test(mod.lm$residuals)
 coeftest(mod.lm, vcov=vcovHC(mod.lm))
 ```
-We see both from the histogram and the qq-plot that the distribution deviates from normality at the tail ends. We particularly see a positive skew present in our distribution. With a p-value 0.0009 for the Shapiro-Wilk test we can safely reject the null hypothesis that the residuals follow a normal distribution. Hence, we can't gaurantee precision on our standard errors. We can switch to robust standard errors.
+We see both from  the qq-plot that the distribution deviates from normality at the tail ends. We particularly see a positive skew present in our distribution. With a p-value 0.0009 for the Shapiro-Wilk test we can safely reject the null hypothesis that the residuals follow a normal distribution. Hence, we can't gaurantee precision on our standard errors. We can switch to robust standard errors.
 
+*1. The model is linear in it's parameters.*
 ```{r}
 summary(mod.lm$fitted.values)
 ```
 
 We see that the predictions are outside of the range for a probability (can't be negative). This is concerning as we want to assess risk of O-ring failure and probability would be well-suited for that task. Having a range that doesn't correspond gives us little sense of what's going on as the scale becomes relatively arbitrary.
 
+*2. The conditional mean of the errors is 0.*
 ```{r}
-scatterplot(mod.lm$residuals,as.numeric(df$O.ring))
+par(mfrow=c(1,2))
+#plot(mod.lm$fitted.values,mod.lm$residuals,xlab = 'Fitted Values',ylab='Residuals',title='Residuals vs. Fitted')
+plot(mod.lm,which = c(1,3))
 ```
 
-We already knew from the binary nature of the outcome that a continuous seemed innapropriate, however the line of residuals vs the O.ring failure outcome does manage to somewhat separate distinct cases (we see 4 of the observations are on the "wrong" side of the decision boundary). A linear relation seems roughly justified.
-
-```{r}
-par(mfrow=c(2,2))
-plot(mod.lm)
-```
-
-We 
+We see from the curvature in the residuals vs. fitted plot that there is cirvature present and that the zero conditional mean assumption is suspect.
 
   *5. The errors have common constant variance (homoscedasticity).*
 ```{r}
@@ -493,21 +483,14 @@ bptest(mod.lm)
 
 Both the traditional Breusch-Pagan test and the Studentized Breusch-Pagan test fail to reject the null hypothesis that the variance is homoskedastic. However the lack of even band in residuals vs fitted plot and curvature in scale-location plots suggests violation of this assumption though difficult to say due to sparsity of data. As we noted, at low sample size, these tests might have also lack the power.
 
-  *2. The conditional mean of the errors is 0.*
+  
   
   *6. The errors are independent of one another.*
 ```{r}
 durbinWatsonTest(mod.lm)
-par(mfrow=c(1,1))
-residualPlots(mod.lm)
 ```
 By the Durbin-Watson test, we fail to reject the null that the residuals are uncorrelated with one another. From the cross-sectional nature of the launch events, we can also feel more comfortable about this result. We also are able to reject the idea that the residuals correlate with our explanatory variables as well (slight but negligble curvature), giving some plausibility to 0 conditional mean of the errors.
 
-```{r}
-gv.mod.lm <- gvlma(mod.lm)
-summary(gv.mod.lm) 
-```
-From the gvlma we are added some assurance in that Global Stat- fail to reject relationship between X and Y are roughly linear, 4.failed to reject the Link function was appropriate , 5. failed to reject variance of the residuals seem constant. From Skewness, we see a potential need for variable transformation but we need to keep the model comparable to the logistic version.
 
 After review of both models, we would opt for a logistic regression for several reasons. The linear regression model estimates that the percentage of O-ring failures will decrease by 0.007923 with every 1$^\circ$F increase in temperature. That means, the probability of O-rings failure will be less than 0 when the temperature is roughly 78$^\circ$F and above. This does not correspond with the physical picture. Also, the linear regression assumes a linear relationship between the probability of O-rings failure and the temperature which is not realistic. First, the output is more desirable in that we can compare odds of failures as well as compute actual probabilities of failure whereas the linear regression goes out of range. Moreover, the linear regression's questionability in terms of inference (failed normality of errors), likely keeps us restricted to the observed data in terms of predictions.
 
