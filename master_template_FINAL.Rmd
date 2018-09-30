@@ -16,14 +16,14 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, fig.width = 8, fig.height = 
 
 ## I. Introduction
 
-Following the Challenger Space Shuttle's destruction in 1986, a commission appointed by President Reagan determined the cause to be a gas leak through a field joint. This problem was well-known to NASA and is frequently referred to as an o-ring failure. In 1989, Dalal et al. collected data from previous space shuttle launches to study the probability of an o-ring failure under conditions similar to those that occured during the Challenger launch in 1986. In this analysis, we used their dataset to echo the purpose of their study and attempt to determine the effect of key explanatory variables (temperature and pressure) using LRT's  on O-ring failure. We also explore the possibility of using a linear model and assess it's validity while comparing to the logistic model. In the end we specified a logistic regression model on temperature with the following formula:
+Following the Challenger Space Shuttle's destruction in 1986, a commission appointed by President Reagan determined the cause to be a gas leak through a field joint. This problem was well-known to NASA and is frequently referred to as an O-ring failure. In 1989, Dalal et al. collected data from previous space shuttle launches to study the probability of an O-ring failure under conditions similar to those that occured during the Challenger launch in 1986. In this analysis, we used their dataset to echo the purpose of their study and attempt to determine the effect of key explanatory variables (temperature and pressure) using LRT's  on O-ring failure. We also explore the possibility of using a linear model and assess it's validity while comparing to the logistic model. In the end we specified a logistic regression model on temperature with the following formula:
 
 $$\mbox{logit}(\hat{\pi}) = \frac{\hat{\pi}}{{1-\hat{\pi}}}= 5.08498 - 0.11560\mbox{Temp}$$
 
-The probability of an O-ring failure at temperature 31$^\circ$, the temperature when Challenger was launched, is 0.8178 with  bootstrapped 90% confidence interval of about (0.113,0.993) using profile LR intervals, which would correspond to about five out of the six primary field O-rings failing.
+The probability of an O-ring failure at temperature 31$^\circ$F, the temperature when Challenger was launched, is 0.818 with  a 95% confidence interval of about (0.16,0.991) using profile LR intervals, which would correspond to about five out of the six primary field O-rings failing.
 
 
-We first begin our analysis with a thorough exploratory data analysis in order to understand the variables we are working with. Then, we estimate a series of models that we use to predict o-ring failure. 
+We first begin our analysis with a thorough exploratory data analysis in order to understand the variables we are working with. Then, we estimate a series of models that we use to predict O-ring failure. 
 
 ```{r}
 # Import libraries
@@ -48,7 +48,7 @@ describe(df[,c("Temp", "Pressure", "O.ring")])
 
 A glimpse of the data shows we have 23 observations and 5 variables in our dataset. There are also no missing values. Again, we are primarily interested in the effects of temperature and pressure on o-ring failure. The dependent variable : the percentage of O-ring failures is *O.ring/Number* where *1) O.ring* is the number of primary field O-ring failures and *2)Number* is the total number of primary field O-rings (six total, three for each for two booster rockets). Our two potential explanatory variables are *1)Temp* is temperature at launch in degrees Fahrenheit and *2)Pressure* is combustion pressure (psi).
 
-We can see that the `O.ring` variable has 3 distinct values: 0, 1, and 2 but only 2 observations for the value 2. To deal with this concern in representation we want to consider formulating our problem in terms of having  *at least one* o-ring failure. Therefore, for one version of our model we will binarize our outcomes and transform those flights with 2 failures as having 1 failure for the purposes of this study.We will later compare this to the binomial model when finalzing our model selection. 
+We can see that the `O.ring` variable has 3 distinct values: 0, 1, and 2 but only 2 observations for the value 2. To deal with this concern in representation we might want to consider formulating our problem in terms of having  *at least one* O-ring failure.This might also help with assumptions of independence between O-rings (discussed later). Therefore, for one version of our model we will binarize our outcomes and transform those flights with 2 failures as having 1 failure for the purposes of this study.We will later compare this to the binomial model when finalzing our model selection. 
 
 ```{r}
 # Keep raw counts as new variable of total
@@ -64,7 +64,7 @@ In addition, we see that the dataset contains 23 data points from other shuttle 
 cor(df[,c("Temp", "Pressure", "O.ring")])
 ```
 
-We take a quick look at correlation between variables to assess wether there might be collinearity as well as a rough gauge of predictive power between these variables prior to any transformations. We see that there is no perfect collinearity. We see a moderate negative correlation between O.ring failures and temperature and a weakly positive correlation between pressure and failures- leading us to our first consideration of these variables as the explanatory variables in our model. We see negligible positive correlation between temperature and pressure and thus don't worry about colliniearity.
+We take a quick look at correlation between variables to assess wether there might be collinearity as well as a rough gauge of predictive power between these variables prior to any transformations. We see that there is no perfect collinearity. We see a moderate negative correlation between O-ring failures and temperature and a weakly positive correlation between pressure and failures- leading us to our first consideration of these variables as the explanatory variables in our model. We see negligible positive correlation between temperature and pressure and thus don't worry about colliniearity.
 
 
 ### II (b) Temperature
@@ -121,19 +121,6 @@ print(ggplot(df, aes(factor(O.ring.total), Pressure)) +
 From the Pressure by Number of O-ring Failures chart, there are no O-ring failures in observations occuring at a pressure of 100psi, while the observations at a pressure 50psi or 200psi have a mix of both O-ring failures reported and no failures. Thus, O-rings may be more likely to fail at either low pressure (50psi) or high pressure (200psi) but we would need more observations at 100 psi to be more confident in the trend.
 
 ### II (c) Pressure and Temperature
-
-```{r, fig.align='center'}
-
-#how much does temperature vary by each pressure stage
-ggplot(df, aes(factor(Pressure), Temp)) +
-          geom_boxplot(aes(fill = factor(Pressure))) + 
-          geom_jitter() +
-          ggtitle( "Temperature by Pressure") + 
-          theme(plot.title = element_text(lineheight=1, face="bold"))
-```
-
-Above we isolate the data points where pressure is 200 psi. The right boxplot (when pressure is 200 psi) has a much wider temperature range then when pressure is either 50 psi or 100 psi. This could be due to a lack of data points when the pressure is not 200 psi.
-
 
 ```{r, fig.align='center'}
 #slicing by pressure, any distinct relations between failure and temperature?
@@ -350,7 +337,7 @@ CI.pi=ci.pi(newdata = predict.data, mod.fit.obj = mod_binomial.fit_temp,
 
 ```
 
-The estimated probability of o-ring failure at 31$^\circ$F is `r round(pi.hat31,4)` with and `r round(number_fail,4)` of the 6 O-rings failing. The corresponding 95% Wald confidence interval is `r CI.pi`. 
+The estimated probability of o-ring failure at 31$^\circ$F is `r round(pi.hat31,4)` with and `r round(number_fail,4)` of the 6 O-rings failing. The corresponding 95%  confidence interval is `r CI.pi`. 
 
 #### 5 (e) Bootstrap Estimates
 
@@ -418,8 +405,6 @@ The Quadratic term fails to produce significant effect in change in residual dev
 
 ### Estimate Linear Regression Model and Diagnose/Interpret (3b)
 
-#### 3 (a). Interpret the main result of your final model in terms of both odds and probability of failure
-
 #### 3 (b). With the same set of explanatory variables in your final model, estimate a linear regression model. Explain the model results; conduct model diagnostic; and assess the validity of the model assumptions. Would you use the linear regression model or binary logistic regression in this case. Please explain.
 
 ```{r}
@@ -436,8 +421,8 @@ $$
 
   1. The model is linear in it's parameters.
   2. The conditional mean of the errors is 0. 
-  3. There is a random sampling of observations. *assumed*
-  4. There is no multi-collinearity/perfect collinearity amongst explanatory variables. *passed in EDA*
+  3. There is a random sampling of observations. *would need to investiage source since we select for pre-Challenger launches*
+  4. There is no multi-collinearity/perfect collinearity amongst explanatory variables. *pass:only one explanatory variable*
   5. The errors have common constant variance (homoscedasticity).
   6. The errors are independent of one another.
   7. The errors are normally distributed. *not required for BLUE but do need for reliable inference*
@@ -518,7 +503,7 @@ We look at the change in the odds of an O-ring failure when temperature decrease
 
 ##VI. Conclusion
 
-We analyzed 23 pre-accident launches of the space shuttle and found that the probability of an O-ring failure at 31$^\circ$F is rather high at about 0.8178 with a bootstrapped 90% confidence interval of about (0.113,0.993). This is critical as this is the same temperature at which the Challenger failed and the reason for this investigation.
+We analyzed 23 pre-accident launches of the space shuttle and found that the probability of an O-ring failure at 31$^\circ$F is rather high at about 0.818 with a  95% confidence interval of about (0.16,0.991). This is critical as this is the same temperature at which the Challenger failed and the reason for this investigation.
 
 We made assumptions on independence of O-rings failing independently from one another and a combination of comparing to a binary failure model and the binomial model along with some deference to Dalal's analysis assured us the models are close enough to overcome potential problems. Since we only had 23 observations and the range of temperatures from 53$^\circ$F to 81$^\circ$F was relatively far away  from the Challenger launch and limited, we obtained a rather wide confidence interval for probability of failure. For future analysis, we hope to analayze a wider range of conditions for failure.
 
